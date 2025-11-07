@@ -1,74 +1,84 @@
-# :tada: :tada: Welcome to your new Project on GitHub :tada: :tada:
+# Dynatrace Managed MCP Server
 
-> **Note**
-> This product is not officially supported by Dynatrace!
+<h4 align="center">
+  <a href="https://github.com/dynatrace-oss/dynatrace-managed-mcp/releases">
+    <img src="https://img.shields.io/github/release/dynatrace-oss/dynatrace-managed-mcp" />
+  </a>
+  <a href="https://github.com/dynatrace-oss/dynatrace-managed-mcp/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-mit-blue.svg" alt="Dynatrace Managed MCP Server is released under the MIT License" />
+  </a>
+  <a href="https://www.npmjs.com/package/@dynatrace-oss/dynatrace-managed-mcp">
+    <img src="https://img.shields.io/npm/dm/@dynatrace-oss/dynatrace-managed-mcp?logo=npm&style=flat&color=red" alt="npm" />
+  </a>
+  <a href="https://github.com/dynatrace-oss/dynatrace-managed-mcp">
+    <img src="https://img.shields.io/github/stars/dynatrace-oss/dynatrace-managed-mcp" alt="Dynatrace Managed MCP Server Stars on GitHub" />
+  </a>
+  <a href="https://github.com/dynatrace-oss/dynatrace-managed-mcp">
+    <img src="https://img.shields.io/github/contributors/dynatrace-oss/dynatrace-managed-mcp?color=green" alt="Dynatrace Managed MCP Server Contributors on GitHub" />
+  </a>
+</h4>
 
-Congratulations, your project on GitHub was successfully created and you can start your Open Source Adventure!
+The _Dynatrace Managed MCP server_ allows AI Assistants to interact with on-premise [Dynatrace Managed](https://www.dynatrace.com/) deployments,
+bringing historical observability data directly into your AI assisted workflow.
 
-As each adventure starts with good preparations, we also have something we would like you to do upe front.
+This MCP server is specifically designed for Dynatrace Managed (on-premise) deployments and is intended for accessing historical data.
 
-- [ ] Read this ReadMe carefully, to get an overview of the files within your project.
-- [ ] Write your own ReadMe which reflects your project
-- [ ] Check if the [default community files](https://docs.github.com/en/communities/setting-up-your-project-for-healthy-contributions/creating-a-default-community-health-file)(CONTRIBUTING.md, SECURITY.md, CODE_OF_CONDUCT.md, ..) within the organization `.github`[-project](https://github.com/dynatrace-oss/.github/) match your project's needs. If not, you can always provide your own, but we kindly ask you, that you also update those from time to time.
-- [ ] Check if there is a `LICENSE` file within your project. If not, please create one containing the `Apache License 2.0`.
-- [ ] Explicitly state that this project is not officially supported by Dynatrace in your ReadMe, eg. by using following lines on top of your ReadMe:
+There is a different [Dynatrace MCP](https://github.com/dynatrace-oss/dynatrace-mcp) server for use with Dynatrace SaaS.
 
-    > **Note**
-    > This product is not officially supported by Dynatrace!
+> Note: This product is not officially supported by Dynatrace.
 
-## How can I make my project public?
+If you need help, please contact us via [GitHub Issues](https://github.com/dynatrace-oss/dynatrace-managed-mcp/issues) if you have feature requests, questions, or need help.
 
-At first, the project will be private, as we (OSPO) want to ensure that you followed the guidelines and that everything is in place.
+## Architecture
 
-As soon as you are done with your initial commits, you can inform OSPO and we will take a close look at the project, and set it to public if we do think all guidelines are followed.
+![Architecture](./assets/dynatrace-managed-mcp-arch.png?raw=true)
 
-There is also some automation running, which will set projects, which do not follow the guidelines, to private.
+## Use cases
 
-## Provided Tools
+- **Historical data analysis** - Access legacy observability data from on-premise Managed deployments
+- **Contextual debugging** - Fix issues with full context from monitored exceptions, logs, and anomalies
+- **Security insights** - Get detailed vulnerability analysis and security problem tracking
+- **Intelligent query assistance** - Get context-aware query suggestions and optimization recommendations
+- **Multi-phase incident investigation** - Systematic correlation analysis with automated impact assessment
+- **Advanced transaction analysis** - Root cause identification through cross-API data correlation
+- **Cross-data source correlation** - Connect problems → events → logs → metrics for comprehensive analysis
+- **Performance optimization** - Built-in caching and request batching for efficient cluster usage
+- **Security compliance monitoring** - Vulnerability assessment with evidence-based investigation
 
-### Markdownlint
+## Capabilities
 
-To make it easier for the project to keep the Markdown files in a good shape, we added `markdownlint-cli` to the project.
+- **Metrics Analysis** - Query and analyze performance metrics using V2 Metrics API
+- **Log Investigation** - Search and filter logs with advanced content and time-based queries
+- **Event Tracking** - Monitor system events including deployments and configuration changes
+- **Entity Management** - Discover and analyze monitored entities with relationship mapping
+- **Problem Analysis** - Investigate problems with impact analysis and root cause identification
+- **Security Assessment** - Comprehensive vulnerability scanning and risk assessment
+- **SLO Management** - Service Level Objective monitoring, evaluation tracking, and error budget analysis
+- **Data Correlation** - Cross-API correlation for comprehensive incident analysis including SLO impact
+- **Query Assistance** - Intelligent query suggestions and optimization recommendations
+- **Performance Optimization** - Built-in caching and request batching for cluster efficiency
+- **Timeline Analysis** - Chronological analysis of problems, events, logs, and SLO violations
 
-1. with a `makefile` for easier execution locally, based on docker images, so it can be used in every environment as long as `docker` and `make` are available.
-1. with a workflow for pull request verification based on the `makefile`.
+### Performance Considerations
 
-The following files are part of this integration:
+**Important:** This MCP server is designed for efficient usage with Dynatrace Managed clusters. The server includes built-in performance optimizations:
 
-- `makefile`: as it contains the targets for execution
-- `.markdownlint.yml`: as it contains the configuration for `markdownlint-cli`
-- `.github/workflows/makefile.yml`: as it contains the GitHub Action configuration
+**Performance Features:**
 
-## Licensing
+- **Intelligent Caching** - Responses are cached with configurable TTL to reduce cluster load
+- **Request Batching** - Multiple requests are batched and prioritized for optimal performance
+- **Resource Monitoring** - Built-in performance metrics and optimization recommendations
 
-We are using Apache License 2.0 as our default.
+**Best Practices:**
 
-### Source Code Headers
+1. Use specific time ranges (e.g., 1-2 hours) rather than large historical queries
+2. Leverage entity selectors to filter data at the source
+3. Monitor performance metrics using the `get_performance_metrics` tool
+4. Clear cache periodically using `clear_cache` if memory usage becomes high
+5. Use query suggestions (`suggest_queries`) for optimized query patterns
 
-Every file containing source code must include copyright and license
-information. This includes any JS/CSS files that you might be serving out to
-browsers. (This is to help well-intentioned people avoid accidental copying that
-doesn't comply with the license.)
+**Cluster Compatibility:**
 
-Apache header:
-
-    Copyright 2022 Dynatrace LLC
-
-    Licensed under the Apache License, Version 2.0 (the "License");
-    you may not use this file except in compliance with the License.
-    You may obtain a copy of the License at
-
-        https://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
-
-## Additional Questions/Remarks
-
-If you do have additional questions/remarks, feel free to reach out to OSPO, either via slack or email.
-
-If you think this template did not solve all your problems, please also let us know, either with a message or a pull request.
-Together we can improve this template to make it easier for our future projects.
+- Minimum supported version: Dynatrace Managed 1.320
+- Automatic version detection and optimization
+- Performance warnings for older cluster versions
