@@ -1,0 +1,22 @@
+.env
+dist/*
+node_modules/
+/.vscode/*
+!/.vscode/mcp.json
+.DS_Store
+
+tsconfig.tsbuildinfo
+
+# Token cache directory - contains sensitive OAuth tokens
+.dt-mcp/
+
+# mcp registry
+.mcpregistry_github_token
+.mcpregistry_registry_token
+
+*.bak
+/gn1.bak/*
+/.amazonq/
+/.idea/*
+/*.log
+
