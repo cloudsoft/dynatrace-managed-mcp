@@ -26,13 +26,13 @@
         },
         {
           "name": "DT_API_ENDPOINT_URL",
-          "description": "base url for Dynatrace Managed API, to which the environment id will be appended (e.g. `https://abc123.dynatrace-managed.com:9999/e/`)",
+          "description": "base url for Dynatrace Managed API, to which the environment id will be appended (e.g. `https://abc123.dynatrace-managed.com:9999`)",
           "isRequired": true,
           "format": "string"
         },
         {
           "name": "DT_DYNATRACE_URL",
-          "description": "base url for Dynatrace Managed dashboard, to which the environment id will be appended (e.g. `https://dmz123.dynatrace-managed.com/e/`)",
+          "description": "base url for Dynatrace Managed dashboard, to which the environment id will be appended (e.g. `https://dmz123.dynatrace-managed.com`)",
           "isRequired": false,
           "format": "string"
         },

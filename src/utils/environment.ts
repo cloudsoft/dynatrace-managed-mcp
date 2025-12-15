@@ -24,9 +24,9 @@ export function getManagedEnvironmentConfig(): ManagedEnvironmentConfig {
   }
 
   let environmentId = environmentIdRaw.replace(/\/$/, ''); // Remove trailing slash
-  let apiUrl = apiUrlRaw + (apiUrlRaw.endsWith('/') ? '' : '/') + environmentId;
+  let apiUrl = apiUrlRaw + (apiUrlRaw.endsWith('/') ? '' : '/') + 'e/' + environmentId;
   let dashboardUrl = dashboardUrlRaw ? dashboardUrlRaw : apiUrlRaw;
-  dashboardUrl = dashboardUrl + (dashboardUrl.endsWith('/') ? '' : '/') + environmentId;
+  dashboardUrl = dashboardUrl + (dashboardUrl.endsWith('/') ? '' : '/') + 'e/' + environmentId;
 
   return {
     environmentId: environmentId,

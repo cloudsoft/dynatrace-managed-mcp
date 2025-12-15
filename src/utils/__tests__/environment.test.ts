@@ -21,8 +21,8 @@ describe('getManagedEnvironmentConfig', () => {
 
     expect(config).toEqual({
       environmentId: 'my-env-id',
-      apiUrl: 'https://my-api-endpoint.com/my-env-id',
-      dashboardUrl: 'https://my-dashboard-endpoint.com/my-env-id',
+      apiUrl: 'https://my-api-endpoint.com/e/my-env-id',
+      dashboardUrl: 'https://my-dashboard-endpoint.com/e/my-env-id',
       apiToken: 'my-api-token',
     });
   });
@@ -37,8 +37,8 @@ describe('getManagedEnvironmentConfig', () => {
 
     expect(config).toEqual({
       environmentId: 'my-env-id',
-      apiUrl: 'https://my-api-endpoint.com/my-env-id',
-      dashboardUrl: 'https://my-dashboard-endpoint.com/my-env-id',
+      apiUrl: 'https://my-api-endpoint.com/e/my-env-id',
+      dashboardUrl: 'https://my-dashboard-endpoint.com/e/my-env-id',
       apiToken: 'my-api-token',
     });
   });
@@ -52,8 +52,8 @@ describe('getManagedEnvironmentConfig', () => {
 
     expect(config).toEqual({
       environmentId: 'my-env-id',
-      apiUrl: 'https://my-endpoint.com/my-env-id',
-      dashboardUrl: 'https://my-endpoint.com/my-env-id',
+      apiUrl: 'https://my-endpoint.com/e/my-env-id',
+      dashboardUrl: 'https://my-endpoint.com/e/my-env-id',
       apiToken: 'my-api-token',
     });
   });
