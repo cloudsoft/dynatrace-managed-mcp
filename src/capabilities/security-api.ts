@@ -1,4 +1,4 @@
-import { ManagedAuthClient } from '../authentication/managed-auth-client';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client';
 
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
@@ -79,9 +79,9 @@ export class SecurityApiClient {
   static readonly API_PAGE_SIZE = 200;
   static readonly MAX_CVES_DISPLAY = 11;
 
-  constructor(private authClient: ManagedAuthClient) {}
+  constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listSecurityProblems(params: SecurityProblemQueryParams = {}): Promise<ListSecurityProblemsResponse> {
+  async listSecurityProblems(params: SecurityProblemQueryParams = {}, environment_aliases?: string): Promise<[]> {
     const queryParams = {
       pageSize: params.pageSize || SecurityApiClient.API_PAGE_SIZE,
       ...(params.riskLevel && { riskLevel: params.riskLevel }),
@@ -92,84 +92,91 @@ export class SecurityApiClient {
       ...(params.sort && { sort: params.sort }),
     };
 
-    const response = await this.authClient.makeRequest('/api/v2/securityProblems', queryParams);
-    logger.debug('listSecurityProblems response', { data: response });
-    return response;
+    const responses = await this.authManager.makeRequests('/api/v2/securityProblems', queryParams, environment_aliases);
+    logger.debug('listSecurityProblems response', { data: responses });
+    return responses;
   }
 
-  async getSecurityProblemDetails(problemId: string): Promise<any> {
-    const response = await this.authClient.makeRequest(`/api/v2/securityProblems/${encodeURIComponent(problemId)}`);
-    logger.debug('getSecurityProblemDetails response', { data: response });
-    return response;
+  async getSecurityProblemDetails(problemId: string, environment_aliases?: string): Promise<any> {
+    const responses = await this.authManager.makeRequests(`/api/v2/securityProblems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
+    logger.debug('getSecurityProblemDetails response', { data: responses });
+    return responses;
   }
 
-  formatList(response: ListSecurityProblemsResponse): string {
-    let totalCount = response.totalCount || -1;
-    let numProblems = response.securityProblems?.length || 0;
-    let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
+  formatList(responses: {'alias': string, 'data': ListSecurityProblemsResponse}[]): string {
+    let result = "";
+    let totalNumProblems = 0;
+    let anyLimited = false
+    for (const response of responses) {
+      let totalCount = response.data.totalCount || -1;
+      let numProblems = response.data.securityProblems?.length || 0;
+      totalNumProblems += numProblems;
+      let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
 
-    let result =
-      'Listing ' +
-      numProblems +
-      (totalCount == -1 ? '' : ' of ' + totalCount) +
-      ' security vulnerabilities in the following json.\n';
-
-    if (isLimited) {
       result +=
-        'Not showing all matching vulnerabilities. Consider using more specific filters (status, impactLevel, entitySelector) to get complete results.\n';
+        'Listing ' +
+        numProblems +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' security vulnerabilities from ' + response.alias + ' in the following json.\n';
+
+      if (isLimited) {
+        result +=
+          'Not showing all matching vulnerabilities. Consider using more specific filters (status, impactLevel, entitySelector) to get complete results.\n';
+        anyLimited = true;
+      }
+
+      response.data.securityProblems?.forEach((problem: any) => {
+        result += `securityProblemId: ${problem.securityProblemId}\n`;
+        result += `  displayId: ${problem.displayId}\n`;
+        result += `  title: ${problem.title}\n`;
+        result += `  status: ${problem.status}\n`;
+        result += `  vulnerabilityType: ${problem.vulnerabilityType}\n`;
+        result += `  technology: ${problem.technology}\n`;
+        if (problem.riskAssessment) {
+          result +=
+            `  riskLevel: ${problem.riskAssessment.riskLevel}; ` +
+            `riskScore: ${problem.riskAssessment.riskScore}; ` +
+            `exposure: ${problem.riskAssessment.exposure}\n`;
+        }
+        if (problem.cveIds && problem.cveIds.length > 0) {
+          result +=
+            `  cveIds: ${problem.cveIds.slice(0, SecurityApiClient.MAX_CVES_DISPLAY).join(', ')}` +
+            `${problem.cveIds.length > SecurityApiClient.MAX_CVES_DISPLAY ? ` (+${problem.cveIds.length - SecurityApiClient.MAX_CVES_DISPLAY} more)` : ''}\n`;
+        }
+        if (problem.firstSeenTimestamp) {
+          result += `  firstSeen: ${formatTimestamp(problem.firstSeenTimestamp)}\n`;
+        }
+        result += '\n';
+      });
     }
 
-    response.securityProblems?.forEach((problem: any) => {
-      result += `securityProblemId: ${problem.securityProblemId}\n`;
-      result += `  displayId: ${problem.displayId}\n`;
-      result += `  title: ${problem.title}\n`;
-      result += `  status: ${problem.status}\n`;
-      result += `  vulnerabilityType: ${problem.vulnerabilityType}\n`;
-      result += `  technology: ${problem.technology}\n`;
-      if (problem.riskAssessment) {
-        result +=
-          `  riskLevel: ${problem.riskAssessment.riskLevel}; ` +
-          `riskScore: ${problem.riskAssessment.riskScore}; ` +
-          `exposure: ${problem.riskAssessment.exposure}\n`;
-      }
-      if (problem.cveIds && problem.cveIds.length > 0) {
-        result +=
-          `  cveIds: ${problem.cveIds.slice(0, SecurityApiClient.MAX_CVES_DISPLAY).join(', ')}` +
-          `${problem.cveIds.length > SecurityApiClient.MAX_CVES_DISPLAY ? ` (+${problem.cveIds.length - SecurityApiClient.MAX_CVES_DISPLAY} more)` : ''}\n`;
-      }
-      if (problem.firstSeenTimestamp) {
-        result += `  firstSeen: ${formatTimestamp(problem.firstSeenTimestamp)}\n`;
-      }
-      result += '\n';
-    });
 
     result +=
       '\n' +
       'Next Steps:\n' +
-      (numProblems == 0
+      (totalNumProblems == 0
         ? '* Verify that the filters such as entitySelector, status and time range were correct, and search again with different filters.\n'
         : '') +
-      (isLimited ? '* Use more restrictive filters, such as a more specific entitySelector and status.\n' : '') +
-      (numProblems > 1 ? '* Use sort (e.g. with "-riskAssessment.riskScore" for highest risk score first).\n' : '') +
+      (anyLimited ? '* Use more restrictive filters, such as a more specific entitySelector and status.\n' : '') +
+      (totalNumProblems > 1 ? '* Use sort (e.g. with "-riskAssessment.riskScore" for highest risk score first).\n' : '') +
       '* If the user is interested in a specific vulnerability, use the get_security_problem_details tool. Use the securityProblemId for this.\n' +
-      '* Suggest to the user that they view the security vulnerabilties in the Dynatrace UI at ' +
-      `${this.authClient.dashboardBaseUrl}/ui/security/overview for an overview,` +
-      `or ${this.authClient.dashboardBaseUrl}/ui/security/vulnerabilities for a list of third-party vulnerabilties` +
+      '* Suggest to the user that they view the security vulnerabilties in the Dynatrace UI.' +
+      //`${this.authClient.dashboardBaseUrl}/ui/security/overview for an overview,` +
+      //`or ${this.authClient.dashboardBaseUrl}/ui/security/vulnerabilities for a list of third-party vulnerabilties` +
       '\n';
 
     return result;
   }
 
-  formatDetails(response: any): string {
-    let result =
-      'Details of security problem in the following json.\n' +
-      JSON.stringify(response) +
-      '\n' +
-      'Next Steps:\n' +
+  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+    let result = "";
+    for (const response of responses) {
+      result += 'Details of security problem from environment ' + response.alias + ' in the following json:\n' +
+        JSON.stringify(response.data) + '\n';
+    }
+    result +=  'Next Steps:\n' +
       '* If there are affectedEntities, suggest to the user that they could get further information about those entities with get_entity_detais tool, using the entityId.\n' +
-      '* Suggest to the user that they view the security vulnerability in the Dynatrace UI ' +
-      `${this.authClient.dashboardBaseUrl}/ui/security/vulnerabilities/<securityProblemId>, using the securityProblemId in the URL\n`;
-
+      '* Suggest to the user that they view the security vulnerability in the Dynatrace UI using the securityProblemId in the URL\n';
     return result;
   }
 }

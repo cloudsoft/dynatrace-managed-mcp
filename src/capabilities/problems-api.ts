@@ -1,4 +1,4 @@
-import { ManagedAuthClient } from '../authentication/managed-auth-client.js';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
 
@@ -71,9 +71,9 @@ export interface Evidence {
 export class ProblemsApiClient {
   static readonly API_PAGE_SIZE = 50;
 
-  constructor(private authClient: ManagedAuthClient) {}
+  constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listProblems(params: ProblemQueryParams = {}): Promise<ListProblemResponse> {
+  async listProblems(params: ProblemQueryParams = {}, environment_aliases? : string): Promise<[]> {
     const queryParams = {
       pageSize: params.pageSize || ProblemsApiClient.API_PAGE_SIZE,
       ...(params.from && { from: params.from }),
@@ -84,78 +84,80 @@ export class ProblemsApiClient {
       ...(params.sort && { sort: params.sort }),
     };
 
-    const response = await this.authClient.makeRequest('/api/v2/problems', queryParams);
+    const response = await this.authManager.makeRequests('/api/v2/problems', queryParams, environment_aliases);
 
     logger.debug('listProblems response', { data: response });
     return response;
   }
 
-  async getProblemDetails(problemId: string): Promise<any> {
-    const response = await this.authClient.makeRequest(`/api/v2/problems/${encodeURIComponent(problemId)}`);
+  async getProblemDetails(problemId: string, environment_aliases? : string): Promise<any> {
+    const response = await this.authManager.makeRequests(`/api/v2/problems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
 
     logger.debug('getProblemDetails response', { data: response });
     return response;
   }
 
-  formatList(response: ListProblemResponse): string {
-    let totalCount = response.totalCount || -1;
-    let numProblems = response.problems?.length || 0;
-    let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
+  formatList(responses: {'alias': string, 'data': ListProblemResponse}[]): string {
+    let result = "";
+    let totalNumProblems = 0;
+    let anyLimited = false
+    for (const response of responses) {
+      let totalCount = response.data.totalCount || -1;
+      let numProblems = response.data.problems?.length || 0;
+      totalNumProblems += numProblems;
+      let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
 
-    let result = 'Listing ' + numProblems + (totalCount == -1 ? '' : ' of ' + totalCount) + ' problems.\n';
+      result += 'Listing ' + numProblems + (totalCount == -1 ? '' : ' of ' + totalCount) + ' problems from ' + response.alias + '.\n\n';
 
-    if (isLimited) {
-      result +=
-        'Not showing all matching problems. Consider using more specific filters (status, impactLevel, entitySelector) to get complete results.\n';
+      if (isLimited) {
+        result +=
+          'Not showing all matching problems. Consider using more specific filters (status, impactLevel, entitySelector) to get complete results.\n';
+        anyLimited = true;
+      }
+
+      response.data.problems?.forEach((problem: any) => {
+        result += `problemId: ${problem.problemId}\n`;
+        result += `  displayId: ${problem.displayId}\n`;
+        result += `  title: ${problem.title}\n`;
+        result += `  status: ${problem.status}\n`;
+        result += `  severityLevel: ${problem.severityLevel}\n`;
+        result += `  impactLevel: ${problem.impactLevel}\n`;
+        result += `  severityLevel: ${problem.severityLevel}\n`;
+        if (problem.startTime) {
+          result += `  startTime: ${formatTimestamp(problem.startTime)}\n`;
+        }
+        if (problem.endTime && problem.endTime != -1) {
+          result += `  endTime: ${formatTimestamp(problem.endTime)}\n`;
+        }
+        result += '\n';
+      });
     }
-
-    response.problems?.forEach((problem: any) => {
-      result += `problemId: ${problem.problemId}\n`;
-      result += `  displayId: ${problem.displayId}\n`;
-      result += `  title: ${problem.title}\n`;
-      result += `  status: ${problem.status}\n`;
-      result += `  severityLevel: ${problem.severityLevel}\n`;
-      result += `  impactLevel: ${problem.impactLevel}\n`;
-      result += `  severityLevel: ${problem.severityLevel}\n`;
-      if (problem.startTime) {
-        result += `  startTime: ${formatTimestamp(problem.startTime)}\n`;
-      }
-      if (problem.endTime && problem.endTime != -1) {
-        result += `  endTime: ${formatTimestamp(problem.endTime)}\n`;
-      }
-      result += '\n';
-    });
 
     result +=
       '\n' +
       'Next Steps:\n' +
-      (numProblems == 0
+      (totalNumProblems == 0
         ? '* Verify that the filters such as entitySelector and time range were correct, and search again with different filters.\n'
         : '') +
-      (isLimited ? '* Use more restrictive filters, such as a more specific entitySelector.\n' : '') +
-      (numProblems > 1 ? '* Use sort (e.g. with "+status" for open problems first).\n' : '') +
-      '* Suggest to the user that they view the problems in the Dynatrace UI at ' +
-      `${this.authClient.dashboardBaseUrl}/ui/problems` +
-      '\n' +
-      '* If the user is interested in a specific problem, use the get_problem_details tool. ' +
+      (anyLimited ? '* Use more restrictive filters, such as a more specific entitySelector.\n' : '') +
+      (totalNumProblems > 1 ? '* Use sort (e.g. with "+status" for open problems first).\n' : '') +
+      '* Suggest to the user that they view the problems in the Dynatrace UI.' +
+      '\n' + '* If the user is interested in a specific problem, use the get_problem_details tool. ' +
       'Use the problemId (UUID) for detailed analysis.\n';
 
     return result;
   }
 
-  formatDetails(response: any): string {
-    let result =
-      'Details of problem in the following json.\n' +
-      JSON.stringify(response) +
-      '\n' +
-      'Next Steps:\n' +
-      '* If the affectedEntities is not empty, suggest to the user that they could investigate those entities further. For example with:\n';
-    ("   * list_events tool, using the affected entity's entityId in the entitySelector.\n");
-    ('   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n');
-    '* Suggest to the user that they view the problem in the Dynatrace UI ' +
-      `${this.authClient.dashboardBaseUrl}/#problems/problemdetails;pid=<problemId>, using the problemId in the URL` +
-      '\n';
-
+  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+    let result = "";
+    for (const response of responses) {
+      result += 'Details of problem from environment ' + response.alias + ' in the following json:\n' +
+        JSON.stringify(response.data) + '\n';
+    }
+    result += 'Next Steps:\n' +
+      '* If the affectedEntities is not empty, suggest to the user that they could investigate those entities further. For example with:\n' +
+      ("   * list_events tool, using the affected entity's entityId in the entitySelector.\n") +
+      ('   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n');
     return result;
   }
 }

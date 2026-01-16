@@ -1,5 +1,4 @@
-import { ManagedAuthClient } from '../authentication/managed-auth-client.js';
-import { formatTimestamp } from '../utils/date-formatter';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { logger } from '../utils/logger';
 
 export interface MetricListParams {
@@ -63,9 +62,9 @@ export class MetricsApiClient {
   static readonly API_PAGE_SIZE = 500;
   static readonly MAX_DIMENSIONS_DISPLAY = 11;
 
-  constructor(private authClient: ManagedAuthClient) {}
+  constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listAvailableMetrics(params: MetricListParams = {}): Promise<ListMetricsResponse> {
+  async listAvailableMetrics(params: MetricListParams = {}, environment_aliases?: string): Promise<[]> {
     const queryParams = {
       pageSize: params.pageSize || MetricsApiClient.API_PAGE_SIZE,
       ...(params.entitySelector && { entitySelector: params.entitySelector }),
@@ -76,18 +75,18 @@ export class MetricsApiClient {
       ...(params.nextPageKey && { nextPageKey: params.nextPageKey }),
     };
 
-    const response = await this.authClient.makeRequest('/api/v2/metrics', queryParams);
-    logger.debug('listAvailableMetrics response', { data: response });
-    return response;
+    const responses = await this.authManager.makeRequests('/api/v2/metrics', queryParams, environment_aliases);
+    logger.debug(`listAvailableMetrics responses from ${this.authManager.clients.length} sources: `, { data: responses });
+    return responses;
   }
 
-  async getMetricDetails(metricId: string): Promise<any> {
-    const response = await this.authClient.makeRequest(`/api/v2/metrics/${encodeURIComponent(metricId)}`);
+  async getMetricDetails(metricId: string, environment_aliases?: string): Promise<[]> {
+    const response = await this.authManager.makeRequests(`/api/v2/metrics/${encodeURIComponent(metricId)}`, undefined, environment_aliases);
     logger.debug(`getMetricDetails response, metricId=${metricId}`, { data: response });
     return response;
   }
 
-  async queryMetrics(params: MetricQueryParams): Promise<MetricDataResponse> {
+  async queryMetrics(params: MetricQueryParams, environment_aliases?: string): Promise<[]> {
     const queryParams = {
       metricSelector: params.metricSelector,
       resolution: params.resolution || 'Inf',
@@ -96,132 +95,143 @@ export class MetricsApiClient {
       ...(params.entitySelector && { entitySelector: params.entitySelector }),
     };
 
-    const response = await this.authClient.makeRequest('/api/v2/metrics/query', queryParams);
+    const response = await this.authManager.makeRequests('/api/v2/metrics/query', queryParams, environment_aliases);
     logger.debug(`queryMetrics response, params=${JSON.stringify(params)}`, { data: response });
     return response;
   }
 
-  formatMetricList(response: ListMetricsResponse): string {
-    let totalCount = response?.totalCount || -1;
-    let numMetrics = response?.metrics?.length || 0;
-    let isLimited = totalCount != 0 - 1 && totalCount > numMetrics;
+  formatMetricList(responses: {'alias': string, 'data': ListMetricsResponse}[]): string {
+    let result = "";
+    let totalNumMetrics = 0;
+    let anyLimited = false
 
-    let result = 'Listing ' + numMetrics + (totalCount == -1 ? '' : ' of ' + totalCount) + ' metrics.\n';
+    for (const response of responses) {
+      let totalCount = response?.data.totalCount || -1;
+      let numMetrics = response?.data.metrics?.length || 0;
+      totalNumMetrics += numMetrics;
+      let isLimited = totalCount != 0 - 1 && totalCount > numMetrics;
 
-    if (isLimited) {
-      result += 'Not showing all matching metrics. Consider using more specific filters to get complete results.\n';
-    }
+      result += 'Listing ' + numMetrics + (totalCount == -1 ? '' : ' of ' + totalCount) + ' metrics from ' + response.alias + '.\n\n';
 
-    response.metrics?.forEach((metric: any) => {
-      result += `metricId: ${metric.metricId}\n`;
-      if (metric.displayName) result += `  displayName: ${metric.displayName}\n`;
-      if (metric.description) result += `  description: ${metric.description}\n`;
-      if (metric.unit) result += `  unit: ${metric.unit}\n`;
-
-      // High Priority: Add aggregation types
-      if (metric.aggregationTypes && metric.aggregationTypes.length > 0) {
-        result += `  aggregationTypes: ${metric.aggregationTypes.join(', ')}\n`;
+      if (isLimited) {
+        result += 'Not showing all matching metrics. Consider using more specific filters to get complete results.\n';
+        anyLimited = true;
       }
 
-      // High Priority: Add dimension definitions (key for filtering)
-      if (metric.dimensionDefinitions && metric.dimensionDefinitions.length > 0) {
-        const dims = metric.dimensionDefinitions
-          .slice(0, MetricsApiClient.MAX_DIMENSIONS_DISPLAY)
-          .map((dim: any) => dim.name)
-          .join(', ');
-        result += `  dimensions: ${dims}${metric.dimensionDefinitions.length > MetricsApiClient.MAX_DIMENSIONS_DISPLAY ? ` (+${metric.dimensionDefinitions.length - MetricsApiClient.MAX_DIMENSIONS_DISPLAY} more)` : ''}\n`;
-      }
+      response.data.metrics?.forEach((metric: any) => {
+        result += `metricId: ${metric.metricId}\n`;
+        if (metric.displayName) result += `  displayName: ${metric.displayName}\n`;
+        if (metric.description) result += `  description: ${metric.description}\n`;
+        if (metric.unit) result += `  unit: ${metric.unit}\n`;
 
-      result += '\n';
-    });
-
-    result +=
-      '\n' +
-      'Next Steps:\n' +
-      (numMetrics == 0 ? '* Verify that the filters were correct, and search again with different filters\n' : '') +
-      (isLimited
-        ? '* To filter the list of metrics, use list_available_metrics tool with sorting and with specific filters (e.g. entitySelector and searchText).\n'
-        : '') +
-      '* Use get_metric_details tool for detailed information of a particular metric.\n' +
-      '* Suggest to the user that they use the Dynatrace UI to:\n' +
-      `   * Browse the list of metrics at ${this.authClient.dashboardBaseUrl}/ui/metrics' + '\n` +
-      `   * View metric data at ${this.authClient.dashboardBaseUrl}/ui/data-explorer' + '\n`;
-
-    return result;
-  }
-
-  formatMetricDetails(response: any): string {
-    let result =
-      'Details of metric in the following json.\n' +
-      JSON.stringify(response) +
-      '\n' +
-      'Next Steps:\n' +
-      '* Suggest to the user that they use the Dynatrace UI to view metric data at ' +
-      `${this.authClient.dashboardBaseUrl}/ui/data-explorer`;
-
-    return result;
-  }
-
-  formatMetricData(response: MetricDataResponse): string {
-    let resolution = response.resolution;
-    let isNonEmpty =
-      response.result && response.result.length > 0 && response.result[0].data && response.result[0].data.length > 0;
-
-    let result = 'Listing data series';
-
-    if (!isNonEmpty) {
-      result += ' (no datapoints found)\n';
-    } else {
-      result += ', each with timestamped datapoints of the form timestamp: value, timestamp: value, ...\n';
-    }
-
-    if (resolution) {
-      result += `resolution: ${resolution}\n`;
-    }
-
-    response.result?.forEach((metric: any) => {
-      let numDataseries = metric.data?.length || 0;
-
-      result += 'Listing ' + numDataseries + ' data series\n';
-      result += `metricId: ${metric.metricId}\n`;
-
-      metric.data?.forEach((series: any) => {
-        let timestamps = series.timestamps || [];
-        let values = series.values || [];
-
-        if (series.dimensionMap) {
-          result += `  dimensionData: ${JSON.stringify(series.dimensionMap)}\n`;
+        // High Priority: Add aggregation types
+        if (metric.aggregationTypes && metric.aggregationTypes.length > 0) {
+          result += `  aggregationTypes: ${metric.aggregationTypes.join(', ')}\n`;
         }
-        if (series.dimensions) {
-          result += `  dimensions: ${JSON.stringify(series.dimensions)}\n`;
-        }
-        if (timestamps.length > 0) {
-          let formattedDatapoints = '';
-          let numDatapoints = Math.min(timestamps.length, values.length);
-          for (let i = 0; i < Math.min(numDatapoints, MetricsApiClient.MAX_DATA_POINTS); i++) {
-            formattedDatapoints += `${timestamps[i]}: ${values[i]}, `;
-          }
-          result += `  timestamped datapoints: ${formattedDatapoints}`;
-          if (numDatapoints > MetricsApiClient.MAX_DATA_POINTS) {
-            result += ` and ${numDatapoints - MetricsApiClient.MAX_DATA_POINTS} more data points`;
-          }
-          result += '\n';
-        } else {
-          result += `  No datapoints\n`;
+
+        // High Priority: Add dimension definitions (key for filtering)
+        if (metric.dimensionDefinitions && metric.dimensionDefinitions.length > 0) {
+          const dims = metric.dimensionDefinitions
+            .slice(0, MetricsApiClient.MAX_DIMENSIONS_DISPLAY)
+            .map((dim: any) => dim.name)
+            .join(', ');
+          result += `  dimensions: ${dims}${metric.dimensionDefinitions.length > MetricsApiClient.MAX_DIMENSIONS_DISPLAY ? ` (+${metric.dimensionDefinitions.length - MetricsApiClient.MAX_DIMENSIONS_DISPLAY} more)` : ''}\n`;
         }
         result += '\n';
       });
-    });
+    }
 
     result +=
       '\n' +
       'Next Steps:\n' +
-      (!isNonEmpty
+      (totalNumMetrics == 0 ? '* Verify that the filters were correct, and search again with different filters\n' : '') +
+      (anyLimited
+        ? '* To filter the list of metrics, use list_available_metrics tool with sorting and with specific filters (e.g. entitySelector and searchText).\n'
+        : '') +
+      '* Use get_metric_details tool for detailed information of a particular metric.\n' +
+      '* Suggest to the user that they use the Dynatrace UI to:\n'
+      //`   * Browse the list of metrics at ${this.authClient.dashboardBaseUrl}/ui/metrics' + '\n` +
+      //`   * View metric data at ${this.authClient.dashboardBaseUrl}/ui/data-explorer' + '\n`;
+
+    return result;
+  }
+
+  formatMetricDetails(responses: {'alias': string, 'data': string}[]): string {
+    let result = "";
+    for (const response of responses) {
+      result += 'Details of metric from environment ' + response.alias + ' in the following json:\n' +
+        JSON.stringify(response.data) + '\n';
+      //`${this.authClient.dashboardBaseUrl}/ui/data-explorer`;
+    }
+
+    result += 'Next Steps:\n* Suggest to the user that they use the Dynatrace UI to view metric data';
+    return result;
+  }
+
+  formatMetricData(responses: {'alias': string, 'data': MetricDataResponse}[]): string {
+    let result = "";
+    let allEmpty = true;
+    for (const response of responses) {
+      let resolution = response.data.resolution;
+      let isNonEmpty =
+        response.data.result && response.data.result.length > 0 && response.data.result[0].data && response.data.result[0].data.length > 0;
+
+      result += 'Listing data series from environment ' + response.alias;
+
+      if (!isNonEmpty) {
+        result += ' (no datapoints found)\n';
+      } else {
+        result += ', each with timestamped datapoints of the form timestamp: value, timestamp: value, ...\n';
+        allEmpty = false;
+      }
+
+      if (resolution) {
+        result += `resolution: ${resolution}\n`;
+      }
+
+      response.data.result?.forEach((metric: any) => {
+        let numDataseries = metric.data?.length || 0;
+
+        result += 'Listing ' + numDataseries + ' data series\n';
+        result += `metricId: ${metric.metricId}\n`;
+
+        metric.data?.forEach((series: any) => {
+          let timestamps = series.timestamps || [];
+          let values = series.values || [];
+
+          if (series.dimensionMap) {
+            result += `  dimensionData: ${JSON.stringify(series.dimensionMap)}\n`;
+          }
+          if (series.dimensions) {
+            result += `  dimensions: ${JSON.stringify(series.dimensions)}\n`;
+          }
+          if (timestamps.length > 0) {
+            let formattedDatapoints = '';
+            let numDatapoints = Math.min(timestamps.length, values.length);
+            for (let i = 0; i < Math.min(numDatapoints, MetricsApiClient.MAX_DATA_POINTS); i++) {
+              formattedDatapoints += `${timestamps[i]}: ${values[i]}, `;
+            }
+            result += `  timestamped datapoints: ${formattedDatapoints}`;
+            if (numDatapoints > MetricsApiClient.MAX_DATA_POINTS) {
+              result += ` and ${numDatapoints - MetricsApiClient.MAX_DATA_POINTS} more data points`;
+            }
+            result += '\n';
+          } else {
+            result += `  No datapoints\n`;
+          }
+          result += '\n\n';
+        });
+      });
+    }
+
+
+    result +=
+      '\n' +
+      'Next Steps:\n' +
+      (allEmpty
         ? '* Verify that the filters were correct, and search again with different filters\n'
         : '* Use query_metrics_data with more specific filters, such as a narrower time range with to and from, and an entitySelector\n') +
-      '* Suggest to the user that they use the Dynatrace UI to view metric data at ' +
-      `${this.authClient.dashboardBaseUrl}/ui/data-explorer` +
-      '\n';
+      '* Suggest to the user that they use the Dynatrace UI to view metric data';
 
     return result;
   }
