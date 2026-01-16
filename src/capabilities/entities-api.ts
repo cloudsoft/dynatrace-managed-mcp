@@ -98,9 +98,7 @@ export class EntitiesApiClient {
   }
 
   async getEntityRelationships(entityId: string, environment_aliases?: string): Promise<any> {
-    const responses = await this.getEntityDetails(entityId, environment_aliases);
-// TODO: THIS IS NOT GONNA WORK, GOTTA REFACTOR SINCE WE GETTING SEVERAL RESPONSES NOW FROM makeRequests
-    return responses
+    return await this.getEntityDetails(entityId, environment_aliases);
   }
 
   async queryEntities(params: EntityQueryParams, environment_aliases?: string): Promise<[]> {
