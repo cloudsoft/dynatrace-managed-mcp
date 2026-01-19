@@ -14,7 +14,6 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }} # e.g. owner/repo (must be lowercase for Docker)
 
-
 jobs:
   release:
     runs-on: ubuntu-latest
