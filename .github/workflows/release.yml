@@ -126,6 +126,7 @@ jobs:
             type=raw,value=latest
 
       - name: Build and push
+        id: ghcrpush
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -133,6 +134,13 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           provenance: true
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v4.0.0
+
+      - name: Sign ghcr image
+        run: |
+          cosign sign --yes "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.ghcrpush.outputs.digest }}"
 
       # From https://github.com/modelcontextprotocol/registry/blob/main/docs/guides/publishing/github-actions.md
       - name: Install MCP Publisher
