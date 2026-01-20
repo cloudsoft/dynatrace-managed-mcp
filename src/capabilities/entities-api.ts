@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 
 import { logger } from '../utils/logger';
 
@@ -9,20 +9,6 @@ export interface EntityQueryParams {
   from?: string;
   to?: string;
   sort?: string;
-}
-
-export interface ListEntityTypesResponse {
-  types?: EntityType[];
-  totalCount?: number;
-  pageSize?: number;
-  nextPageKey?: string;
-}
-
-export interface ListEntitiesResponse {
-  entities?: Entity[];
-  totalCount?: number;
-  pageSize?: number;
-  nextPageKey?: string;
 }
 
 // Could be a list or a map; hence using 'any'
@@ -53,19 +39,6 @@ export interface Tag {
   value?: string;
 }
 
-export interface Relationship {
-  id?: string;
-  type?: string;
-  fromEntityId?: string;
-  toEntityId?: string;
-}
-
-export interface EntityType {
-  type?: string;
-  displayName?: string;
-  properties?: string[];
-}
-
 export class EntitiesApiClient {
   static readonly API_PAGE_SIZE = 100;
   static readonly MAX_TAGS_DISPLAY = 11;
@@ -74,7 +47,7 @@ export class EntitiesApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listEntityTypes(environment_aliases?: string): Promise<[]> {
+  async listEntityTypes(environment_aliases?: string): Promise<EnvironmentResponse[]> {
     // Deliberately large page size; will format this concisely rather than returning all json in tool response.
     // Want to get all of them (with reason), otherwise trying to pull out common types won't work.
     const params: Record<string, any> = {
@@ -85,23 +58,23 @@ export class EntitiesApiClient {
     return responses;
   }
 
-  async getEntityTypeDetails(entityType: string, environment_aliases?: string): Promise<any> {
+  async getEntityTypeDetails(entityType: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const responses = await this.authManager.makeRequests(`/api/v2/entityTypes/${encodeURIComponent(entityType)}`, undefined, environment_aliases);
     logger.debug(`getEntityTypeDetails response, entityType=${entityType}`, { data: responses });
     return responses;
   }
 
-  async getEntityDetails(entityId: string, environment_aliases?: string): Promise<any> {
+  async getEntityDetails(entityId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const responses = await this.authManager.makeRequests(`/api/v2/entities/${encodeURIComponent(entityId)}`, undefined, environment_aliases);
     logger.debug(`getEntityDetails response, entityId=${entityId}`, { data: responses });
     return responses;
   }
 
-  async getEntityRelationships(entityId: string, environment_aliases?: string): Promise<any> {
+  async getEntityRelationships(entityId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     return await this.getEntityDetails(entityId, environment_aliases);
   }
 
-  async queryEntities(params: EntityQueryParams, environment_aliases?: string): Promise<[]> {
+  async queryEntities(params: EntityQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || EntitiesApiClient.API_PAGE_SIZE,
       entitySelector: params.entitySelector,
@@ -116,7 +89,7 @@ export class EntitiesApiClient {
     return responses;
   }
 
-  formatEntityList(responses: {'alias': string, 'data': ListEntitiesResponse}[]): string {
+  formatEntityList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumEntities = 0;
     let anyLimited = false
@@ -188,7 +161,7 @@ export class EntitiesApiClient {
     return result;
   }
 
-  formatEntityTypeList(responses: {'alias': string, 'data': ListEntityTypesResponse}[]): string {
+  formatEntityTypeList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumTypes = 0;
     const commonTypes = [
@@ -246,7 +219,7 @@ export class EntitiesApiClient {
     return result;
   }
 
-  formatEntityTypeDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatEntityTypeDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Entity type details from environment ' + response.alias + ' in the following json:\n' +
@@ -257,7 +230,7 @@ export class EntitiesApiClient {
     return result;
   }
 
-  formatEntityDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatEntityDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Entity details from environment ' + response.alias + ' in the following json:\n' +
@@ -270,7 +243,7 @@ export class EntitiesApiClient {
     return result;
   }
 
-  formatEntityRelationships(responses: {'alias': string, 'data': GetEntityRelationshipsResponse}[]): string {
+  formatEntityRelationships(responses: EnvironmentResponse[]): string {
     let result = '';
     for (const response of responses) {
       const from = response.data.fromRelationships;

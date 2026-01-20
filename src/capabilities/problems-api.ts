@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
 
@@ -73,7 +73,7 @@ export class ProblemsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listProblems(params: ProblemQueryParams = {}, environment_aliases? : string): Promise<[]> {
+  async listProblems(params: ProblemQueryParams = {}, environment_aliases? : string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || ProblemsApiClient.API_PAGE_SIZE,
       ...(params.from && { from: params.from }),
@@ -84,20 +84,20 @@ export class ProblemsApiClient {
       ...(params.sort && { sort: params.sort }),
     };
 
-    const response = await this.authManager.makeRequests('/api/v2/problems', queryParams, environment_aliases);
+    const responses = await this.authManager.makeRequests('/api/v2/problems', queryParams, environment_aliases);
 
-    logger.debug('listProblems response', { data: response });
-    return response;
+    logger.debug('listProblems response', { data: responses });
+    return responses;
   }
 
-  async getProblemDetails(problemId: string, environment_aliases? : string): Promise<any> {
-    const response = await this.authManager.makeRequests(`/api/v2/problems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
+  async getProblemDetails(problemId: string, environment_aliases? : string): Promise<EnvironmentResponse[]> {
+    const responses = await this.authManager.makeRequests(`/api/v2/problems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
 
-    logger.debug('getProblemDetails response', { data: response });
-    return response;
+    logger.debug('getProblemDetails response', { data: responses });
+    return responses;
   }
 
-  formatList(responses: {'alias': string, 'data': ListProblemResponse}[]): string {
+  formatList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumProblems = 0;
     let anyLimited = false
@@ -148,7 +148,7 @@ export class ProblemsApiClient {
     return result;
   }
 
-  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Details of problem from environment ' + response.alias + ' in the following json:\n' +

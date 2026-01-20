@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
@@ -9,13 +9,6 @@ export interface EventQueryParams {
   eventType?: string;
   entitySelector?: string;
   pageSize?: number;
-}
-
-export interface ListEventsResponse {
-  events?: Event[];
-  totalCount?: number;
-  pageSize?: number;
-  nextPageKey?: string;
 }
 
 export interface Event {
@@ -38,7 +31,7 @@ export class EventsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryEvents(params: EventQueryParams, environment_aliases?: string): Promise<[]> {
+  async queryEvents(params: EventQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       from: params.from,
       to: params.to,
@@ -52,13 +45,13 @@ export class EventsApiClient {
     return responses;
   }
 
-  async getEventDetails(eventId: string, environment_aliases?: string): Promise<any> {
+  async getEventDetails(eventId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const responses = await this.authManager.makeRequests(`/api/v2/events/${encodeURIComponent(eventId)}`, undefined, environment_aliases);
     logger.debug('getEventDetails response: ', { data: responses });
     return responses;
   }
 
-  formatList(responses: {'alias': string, 'data': ListEventsResponse}[]): string {
+  formatList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumEvents = 0;
     let anyLimited = false
@@ -134,7 +127,7 @@ export class EventsApiClient {
     return result;
   }
 
-  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Event details from environment ' + response.alias + ' in the following json:\n' +

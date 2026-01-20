@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client';
 
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
@@ -11,13 +11,6 @@ export interface SecurityProblemQueryParams {
   to?: string;
   pageSize?: number;
   sort?: string;
-}
-
-export interface ListSecurityProblemsResponse {
-  securityProblems?: SecurityProblem[];
-  totalCount?: number;
-  pageSize?: number;
-  nextPageKey?: string;
 }
 
 export interface SecurityProblem {
@@ -59,29 +52,13 @@ export interface SecurityProblem {
   lastUpdatedTimestamp?: number;
 }
 
-export interface SecurityProblemDetail extends SecurityProblem {
-  description?: string;
-  remediationItems?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    state: string;
-  }>;
-  events?: Array<{
-    eventType: string;
-    timestamp: number;
-    entityId?: string;
-  }>;
-  codeLocations?: any[];
-}
-
 export class SecurityApiClient {
   static readonly API_PAGE_SIZE = 200;
   static readonly MAX_CVES_DISPLAY = 11;
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listSecurityProblems(params: SecurityProblemQueryParams = {}, environment_aliases?: string): Promise<[]> {
+  async listSecurityProblems(params: SecurityProblemQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || SecurityApiClient.API_PAGE_SIZE,
       ...(params.riskLevel && { riskLevel: params.riskLevel }),
@@ -97,13 +74,13 @@ export class SecurityApiClient {
     return responses;
   }
 
-  async getSecurityProblemDetails(problemId: string, environment_aliases?: string): Promise<any> {
+  async getSecurityProblemDetails(problemId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const responses = await this.authManager.makeRequests(`/api/v2/securityProblems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
     logger.debug('getSecurityProblemDetails response', { data: responses });
     return responses;
   }
 
-  formatList(responses: {'alias': string, 'data': ListSecurityProblemsResponse}[]): string {
+  formatList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumProblems = 0;
     let anyLimited = false
@@ -168,7 +145,7 @@ export class SecurityApiClient {
     return result;
   }
 
-  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Details of security problem from environment ' + response.alias + ' in the following json:\n' +

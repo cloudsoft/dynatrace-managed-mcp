@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
 
@@ -9,12 +9,6 @@ export interface LogQueryParams {
   limit?: number;
   sort?: string;
   environment_aliases?: '';
-}
-
-export interface ListLogsResponse {
-  results?: LogEntry[];
-  sliceSize?: number;
-  nextSliceKey?: string;
 }
 
 export interface LogEntry {
@@ -34,7 +28,7 @@ export class LogsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryLogs(params: LogQueryParams, environment_aliases?: string): Promise<[]> {
+  async queryLogs(params: LogQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       query: params.query || '',
       from: params.from,
@@ -48,7 +42,7 @@ export class LogsApiClient {
     return responses;
   }
 
-  formatList(responses: {'alias': string, 'data': ListLogsResponse}[]): string {
+  formatList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumLogs = 0;
     let anyLimited = false

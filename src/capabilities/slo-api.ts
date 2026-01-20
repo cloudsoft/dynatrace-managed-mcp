@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 
 import { logger } from '../utils/logger';
 
@@ -20,13 +20,6 @@ export interface GetSloQueryParams {
   from?: string;
   to?: string;
   timeFrame?: string;
-}
-
-export interface ListSlosResponse {
-  slo?: SLO[];
-  totalCount?: number;
-  pageSize?: number;
-  nextPageKey?: string;
 }
 
 export interface SLO {
@@ -71,7 +64,7 @@ export class SloApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listSlos(params: SloQueryParams = {}, environment_aliases?: string): Promise<[]> {
+  async listSlos(params: SloQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams: Record<string, any> = {
       pageSize: params.pageSize || SloApiClient.API_PAGE_SIZE,
       ...(params.sloSelector && { sloSelector: params.sloSelector }),
@@ -90,7 +83,7 @@ export class SloApiClient {
     return responses;
   }
 
-  async getSloDetails(params: GetSloQueryParams, environment_aliases?: string): Promise<any> {
+  async getSloDetails(params: GetSloQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams: Record<string, any> = {
       ...(params.from && { from: params.from }),
       ...(params.to && { to: params.to }),
@@ -105,7 +98,7 @@ export class SloApiClient {
     return responses;
   }
 
-  formatList(responses: {'alias': string, 'data': ListSlosResponse}[]): string {
+  formatList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumSlo = 0;
     let anyLimited = false
@@ -167,7 +160,7 @@ export class SloApiClient {
     return result;
   }
 
-  formatDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Details of SLO from environment ' + response.alias + ' in the following json:\n' +

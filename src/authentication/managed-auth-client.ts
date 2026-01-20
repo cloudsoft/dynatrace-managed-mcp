@@ -27,6 +27,11 @@ export interface ManagedAuthClientParams {
   isValid?: boolean;
 }
 
+export interface EnvironmentResponse {
+  alias: string;
+  data: any;
+}
+
 export class ManagedAuthClientManager {
   public readonly rawClients: ManagedAuthClient[];
   public clients: ManagedAuthClient[];
@@ -35,7 +40,7 @@ export class ManagedAuthClientManager {
   constructor(managedEnvironments: ManagedEnvironmentConfig[]) {
     this.rawClients = []
     this.clients = []
-    this.validAliases = []
+    this.validAliases = ["ALL_ENVIRONMENTS",]
 
     logger.warn('Validating Environments');
     for (let managedEnvironment of managedEnvironments) {
@@ -49,7 +54,7 @@ export class ManagedAuthClientManager {
     }
   }
 
-  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<any> {
+  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<EnvironmentResponse[]> {
     let responses = []
     const selectedAliases = environments ? environments.split(';') : this.validAliases;
 
@@ -64,7 +69,7 @@ export class ManagedAuthClientManager {
     return responses;
   }
 
-  async validateClients(): Promise<any> {
+  async isConfigured(): Promise<void> {
     for (let client of this.rawClients) {
       let validClient = await client.isConfigured()
       if (validClient) {

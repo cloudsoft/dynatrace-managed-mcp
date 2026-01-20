@@ -8,7 +8,7 @@ import { Command } from 'commander';
 import { z, ZodRawShape, ZodTypeAny } from 'zod';
 import { getPackageJsonVersion } from './utils/version';
 import { ManagedAuthClientManager } from './authentication/managed-auth-client';
-import { getManagedEnvironmentConfigs } from './utils/environment';
+import { getManagedEnvironmentConfigs, validateEnvironments } from './utils/environment';
 import { createTelemetry } from './utils/telemetry-openkit';
 import { MetricsApiClient } from './capabilities/metrics-api';
 import { LogsApiClient } from './capabilities/logs-api';
@@ -21,6 +21,7 @@ import { SloApiClient } from './capabilities/slo-api';
 
 // Import logger after environment is loaded
 import { logger } from './utils/logger';
+import { transport } from 'winston';
 
 logger.info('Starting Dynatrace Managed MCP');
 
@@ -43,17 +44,26 @@ const main = async () => {
   logger.info(`Initializing Dynatrace Managed MCP Server v${getPackageJsonVersion()}...`);
 
   // Read Managed environment configuration
-  let managedConfigs;
-  try {
-    managedConfigs = getManagedEnvironmentConfigs();
-  } catch (err) {
-    console.error('Failed to get managed environments configuration: ', err);
-    logger.error('Failed to get managed environments configuration: ', { error: err });
+
+  const managedConfigs = getManagedEnvironmentConfigs();
+  const validatedConfigs = validateEnvironments(managedConfigs);
+
+  const initErrors = validatedConfigs['errors']
+  const initConfigs = validatedConfigs['valid_configs']
+
+  if (initErrors.length > 0) {
+    logger.error('Failed to get managed environments configurations: ', { error: initErrors });
+    console.error('Failed to get managed environments configurations: ', { error: initErrors });
+  }
+
+  if (initConfigs.length === 0) {
+    logger.error('No valid environments found, stopping.')
+    console.error('No valid environments found, stopping.');
     process.exit(1);
   }
 
-  const authClientManager = new ManagedAuthClientManager(managedConfigs);
-  await authClientManager.validateClients()
+  const authClientManager = new ManagedAuthClientManager(initConfigs);
+  await authClientManager.isConfigured()
 
   // Initialize API clients
   const metricsClient = new MetricsApiClient(authClientManager);
@@ -118,7 +128,9 @@ Be careful of which MCP to use. If it is unclear, ask the user which they want t
 - Use specific time ranges (1-2 hours) rather than large historical queries for better performance
 - Leverage entity selectors to filter data at the source - they are fundamental to getting good results
 - Use problem IDs (UUID format) from list_problems, not display IDs (P-XXXXX)
-- Start with get_environments_info to understand cluster capabilities and data range
+- Start with get_environments_info to understand connection errors, cluster capabilities and data range. **CRITICAL: Breakdown connection issues to the user before any other request**.
+- On every request, an "environment_alias" must be passed.
+- If the user wants information of all available environments, "environment_alias" MUST be "ALL_ENVIRONMENTS"
 - **When users specify counts** (e.g., "first 25 errors", "50 metrics", "100 errors"), always use the "limit" parameter in tools rather than guessing with searchText
 - **Avoid searchText guessing** - only use searchText when user explicitly mentions keywords to search for
 - **discover_entities ALWAYS requires entitySelector** - never call this tool without providing an entitySelector with exactly ONE entity type like type("SERVICE") unless using an EntityId. Multiple entity types are NOT supported.
@@ -255,17 +267,40 @@ Never run queries that could return very large amounts of data, or that could be
     server.tool(name, description, paramsSchema, annotations, (args: z.ZodRawShape) => wrappedCb(args));
   };
 
-  const envAliasValidate = (alias: string | undefined) => {
-    if (alias) {
-      const env_list = alias.split(';');
-      for (const env_alias of env_list) {
-        if (!authClientManager.validAliases.includes(env_alias)) {
-          return false;
-        }
+  const envAliasValidate = (alias: string) => {
+    if (alias == "ALL_ENVIRONMENTS") {
+      return true;
+    }
+    const env_list = alias.split(';');
+    for (const env_alias of env_list) {
+      if (!authClientManager.validAliases.includes(env_alias)) {
+        return false;
       }
     }
     return true
   }
+
+  tool(
+    'dynatrace_managed_check_for_configuration_errors',
+    'Returns information about environment configurations and any potential error found during initialization',
+    {},
+    {
+      readOnlyHint: true,
+    },
+    async({}) => {
+      let resp = `Dynatrace Managed Environments Information - Listing configuration errors found during initialization:\n\n`;
+      if (initErrors.length > 0) {
+        resp += `Issues where found in environment configurations during start up: \n`;
+        for (const errorMessage of initErrors) {
+          resp += `- ${errorMessage}\n`;
+        }
+        resp += `\nPlease review all environment information and try again. \n`;
+      }
+
+      return resp;
+    }
+  )
+
 
   tool(
     'dynatrace_managed_get_environments_info',
@@ -275,7 +310,7 @@ Never run queries that could return very large amounts of data, or that could be
       readOnlyHint: true,
     },
     async ({}) => {
-      let resp = `Dynatrace Managed Cluster Information - Listing info for all ${authClientManager.rawClients.length} environments:\n\n`;
+      let resp = `Dynatrace Managed Cluster Information - Listing info for ${authClientManager.rawClients.length} environments:\n\n`;
 
       for (let authClient of authClientManager.rawClients) {
         resp += `- Environment Alias: ${authClient.alias}\n`;
@@ -295,7 +330,16 @@ Never run queries that could return very large amounts of data, or that could be
           resp += `- Error message: ${authClient.validationError}\n`;
         }
       }
-      resp += `\n\nAll Dynatrace Managed Cluster Environments listed. Value of "Valid environment" is set to "No" for invalid environments.\n\n`;
+
+      if (initErrors.length > 0) {
+        resp += `Issues were found in environment configurations during start up: \n`;
+        for (const errorMessage of initErrors) {
+          resp += `- ${errorMessage}\n`;
+        }
+        resp += `\nPlease review all environments connection information. \n`;
+      }
+
+      resp += `\n\n\nAll Dynatrace Managed Cluster Environments listed. Environment showing connection errors and environments with "Valid environment" set to "No" are invalid environments.\n\n`;
 
       return resp;
     },
@@ -333,7 +377,7 @@ Never run queries that could return very large amounts of data, or that could be
           (e.g., "first 16 metrics" → limit: 16, "500 metrics" → limit: 500).
           If not specified, returns up to API limit: ${MetricsApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -384,7 +428,7 @@ Never run queries that could return very large amounts of data, or that could be
           type(SERVICE),entityName.equals("exact-name"). Examples: entityId("SERVICE-123"),
           type(SERVICE),entityName("payment-service"), type(AWS_LAMBDA_FUNCTION),tag("AWS_REGION:us-west-2")`,
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -412,7 +456,7 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific metric.',
     {
       metricId: z.string().describe('The metric ID to get details for'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -442,7 +486,7 @@ Never run queries that could return very large amounts of data, or that could be
       to: z.string().describe('End time (ISO format or relative like "now")'),
       limit: z.number().optional().describe('Maximum number of logs to return (default: 100)'),
       sort: z.string().optional().describe('Sort order for logs. Use "-timestamp" for most recent first.'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
         {
           message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -493,7 +537,7 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           `Maximum number of events to return. Use this when user specifies a count (e.g., "first 20 events" → limit: 20). If not specified, returns up to API limit: ${EventsApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -521,7 +565,7 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific event.',
     {
       eventId: z.string().describe('The event ID to get details for'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -541,7 +585,7 @@ Never run queries that could return very large amounts of data, or that could be
     'dynatrace_managed_list_entity_types',
     'List all available entity types in the Managed cluster to understand what types of entities can be monitored.',
     {
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -562,7 +606,7 @@ Never run queries that could return very large amounts of data, or that could be
     'Get details of an entity type.',
     {
       type: z.string().describe('Name of the entity type, such as SERVICE, APPLICATION, HOST, etc'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -616,7 +660,7 @@ Never run queries that could return very large amounts of data, or that could be
         .string()
         .optional()
         .describe('Sort order for entities. Use "name" for ascending, "-name" for descending by display name.'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -644,7 +688,7 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific entity.',
     {
       entityId: z.string().describe('The entity ID to get details for'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -665,7 +709,7 @@ Never run queries that could return very large amounts of data, or that could be
     'Get relationships that a specific entity has "to" and "from" other entities.',
     {
       entityId: z.string().describe('The entity ID to get relationships for'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -715,7 +759,7 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Sort order. Use "+status" (open first), "-status" (closed first), "+startTime" (old first), "-startTime" (new first), or "+relevance"/"-relevance" (with text search).',
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -747,7 +791,7 @@ Never run queries that could return very large amounts of data, or that could be
       problemId: z
         .string()
         .describe('The internal problem ID (UUID format) from list_problems - NOT the displayId (P-XXXXX)'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -789,7 +833,7 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Sort order. Examples: "+status" (open first), "-riskAssessment.riskScore" (highest risk first), "+firstSeenTimestamp" (newest first), "-lastUpdatedTimestamp" (recently updated first).',
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -821,7 +865,7 @@ Never run queries that could return very large amounts of data, or that could be
       securityProblemId: z
         .string()
         .describe('The security problem ID (UUID format) from list_security_problems - NOT the displayId (S-XXXXX)'),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -883,7 +927,7 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           `Maximum number of SLOs to return. Use this when user specifies a count (e.g., "first 15 SLOs" → limit: 15). If not specified, returns up to API limit: ${SloApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
@@ -926,7 +970,7 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Time frame for SLO evaluation: "CURRENT" for SLO\'s own timeframe, "GTF" for custom timeframe specified by from and to parameters',
         ),
-      environment_alias: z.string().optional().describe('Specifically hits one environment. Blank for all.')
+      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
         .refine((alias) => envAliasValidate(alias),
           {
             message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")

@@ -1,4 +1,4 @@
-import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { logger } from '../utils/logger';
 
 export interface MetricListParams {
@@ -17,29 +17,6 @@ export interface MetricQueryParams {
   from: string;
   to: string;
   entitySelector?: string;
-}
-
-export interface ListMetricsResponse {
-  metrics?: Metric[];
-  totalCount?: number;
-  nextPageKey?: string;
-}
-
-export interface MetricDataResponse {
-  result?: Array<{
-    data?: Array<{
-      timestamps?: number[];
-      vaules?: any[];
-      dimensionMap?: Record<string, string>;
-      dimensions?: string[];
-    }>;
-    dataPointCountRatio?: number;
-    dimensionCountRatio?: number;
-    metricId?: string;
-  }>;
-  resolution?: string;
-  totalCount?: number;
-  nextPageKey?: string;
 }
 
 export interface Metric {
@@ -64,7 +41,7 @@ export class MetricsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listAvailableMetrics(params: MetricListParams = {}, environment_aliases?: string): Promise<[]> {
+  async listAvailableMetrics(params: MetricListParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || MetricsApiClient.API_PAGE_SIZE,
       ...(params.entitySelector && { entitySelector: params.entitySelector }),
@@ -80,13 +57,13 @@ export class MetricsApiClient {
     return responses;
   }
 
-  async getMetricDetails(metricId: string, environment_aliases?: string): Promise<[]> {
-    const response = await this.authManager.makeRequests(`/api/v2/metrics/${encodeURIComponent(metricId)}`, undefined, environment_aliases);
-    logger.debug(`getMetricDetails response, metricId=${metricId}`, { data: response });
-    return response;
+  async getMetricDetails(metricId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+    const responses = await this.authManager.makeRequests(`/api/v2/metrics/${encodeURIComponent(metricId)}`, undefined, environment_aliases);
+    logger.debug(`getMetricDetails response, metricId=${metricId}`, { data: responses });
+    return responses;
   }
 
-  async queryMetrics(params: MetricQueryParams, environment_aliases?: string): Promise<[]> {
+  async queryMetrics(params: MetricQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       metricSelector: params.metricSelector,
       resolution: params.resolution || 'Inf',
@@ -95,12 +72,12 @@ export class MetricsApiClient {
       ...(params.entitySelector && { entitySelector: params.entitySelector }),
     };
 
-    const response = await this.authManager.makeRequests('/api/v2/metrics/query', queryParams, environment_aliases);
-    logger.debug(`queryMetrics response, params=${JSON.stringify(params)}`, { data: response });
-    return response;
+    const responses = await this.authManager.makeRequests('/api/v2/metrics/query', queryParams, environment_aliases);
+    logger.debug(`queryMetrics response, params=${JSON.stringify(params)}`, { data: responses });
+    return responses;
   }
 
-  formatMetricList(responses: {'alias': string, 'data': ListMetricsResponse}[]): string {
+  formatMetricList(responses: EnvironmentResponse[]): string {
     let result = "";
     let totalNumMetrics = 0;
     let anyLimited = false
@@ -156,7 +133,7 @@ export class MetricsApiClient {
     return result;
   }
 
-  formatMetricDetails(responses: {'alias': string, 'data': string}[]): string {
+  formatMetricDetails(responses: EnvironmentResponse[]): string {
     let result = "";
     for (const response of responses) {
       result += 'Details of metric from environment ' + response.alias + ' in the following json:\n' +
@@ -168,7 +145,7 @@ export class MetricsApiClient {
     return result;
   }
 
-  formatMetricData(responses: {'alias': string, 'data': MetricDataResponse}[]): string {
+  formatMetricData(responses: EnvironmentResponse[]): string {
     let result = "";
     let allEmpty = true;
     for (const response of responses) {
