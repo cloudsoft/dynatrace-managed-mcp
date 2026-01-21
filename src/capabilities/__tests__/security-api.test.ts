@@ -1,18 +1,23 @@
 import { SecurityApiClient, SecurityProblem } from '../security-api';
-import { ManagedAuthClient } from '../../authentication/managed-auth-client';
+import {
+  EnvironmentResponse,
+  ManagedAuthClient,
+  ManagedAuthClientManager,
+} from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
+import { EventsApiClient } from '../events-api';
 
 jest.mock('../../authentication/managed-auth-client');
 
 describe('SecurityApiClient', () => {
-  let mockAuthClient: jest.Mocked<ManagedAuthClient>;
+  let mockAuthManager: jest.Mocked<ManagedAuthClientManager>;
   let client: SecurityApiClient;
 
   beforeEach(() => {
-    mockAuthClient = {
-      makeRequest: jest.fn(),
+    mockAuthManager = {
+      makeRequests: jest.fn(),
     } as any;
-    client = new SecurityApiClient(mockAuthClient);
+    client = new SecurityApiClient(mockAuthManager);
   });
 
   afterEach(() => {
@@ -21,49 +26,70 @@ describe('SecurityApiClient', () => {
 
   describe('listSecurityProblems', () => {
     it('should list security problems with default parameters', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const result = await client.listSecurityProblems();
+      const result = await client.listSecurityProblems(undefined, 'testAlias');
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/securityProblems', {
-        pageSize: SecurityApiClient.API_PAGE_SIZE,
-      });
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith(
+        '/api/v2/securityProblems',
+        {
+          pageSize: SecurityApiClient.API_PAGE_SIZE,
+        },
+        'testAlias',
+      );
       expect(result).toEqual(mockResponse);
     });
 
     it('should list security problems with all parameters', async () => {
-      const mockResponse = { securityProblems: [] };
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: { securityProblems: [] },
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      await client.listSecurityProblems({
-        riskLevel: 'LOW',
-        status: 'OPEN',
-        entitySelector: 'my-entity-selector',
-        from: 'my-from',
-        to: 'my-to',
-        pageSize: 12,
-        sort: 'my-sort',
-      });
+      await client.listSecurityProblems(
+        {
+          riskLevel: 'LOW',
+          status: 'OPEN',
+          entitySelector: 'my-entity-selector',
+          from: 'my-from',
+          to: 'my-to',
+          pageSize: 12,
+          sort: 'my-sort',
+        },
+        'testAlias',
+      );
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/securityProblems', {
-        pageSize: 12,
-        riskLevel: 'LOW',
-        securityProblemSelector: 'status("OPEN")',
-        entitySelector: 'my-entity-selector',
-        from: 'my-from',
-        to: 'my-to',
-        sort: 'my-sort',
-      });
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith(
+        '/api/v2/securityProblems',
+        {
+          pageSize: 12,
+          riskLevel: 'LOW',
+          securityProblemSelector: 'status("OPEN")',
+          entitySelector: 'my-entity-selector',
+          from: 'my-from',
+          to: 'my-to',
+          sort: 'my-sort',
+        },
+        'testAlias',
+      );
     });
 
     it('should handle API errors', async () => {
-      mockAuthClient.makeRequest.mockRejectedValue({
+      mockAuthManager.makeRequests.mockRejectedValue({
         response: { data: { message: 'Request failed with status code 404' } },
       });
 
       try {
-        await client.listSecurityProblems();
+        await client.listSecurityProblems(undefined, 'testAlias');
         fail('Should have propagated exception');
       } catch (error: any) {
         console.log(error);
@@ -74,24 +100,33 @@ describe('SecurityApiClient', () => {
 
   describe('getSecurityProblemDetails', () => {
     it('should get security problem details', async () => {
-      const mockResponse = {
-        securityProblemId: 'SP-123',
-      };
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            securityProblemId: 'SP-123',
+          },
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const result = await client.getSecurityProblemDetails('SP-123');
+      const result = await client.getSecurityProblemDetails('SP-123', 'testAlias');
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/securityProblems/SP-123');
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith(
+        '/api/v2/securityProblems/SP-123',
+        undefined,
+        'testAlias',
+      );
       expect(result).toEqual(mockResponse);
     });
 
     it('should handle API errors', async () => {
-      mockAuthClient.makeRequest.mockRejectedValue({
+      mockAuthManager.makeRequests.mockRejectedValue({
         response: { data: { message: 'Request failed with status code 404' } },
       });
 
       try {
-        await client.getSecurityProblemDetails('SP-999');
+        await client.getSecurityProblemDetails('SP-999', 'testAlias');
         fail('Should have propagated exception');
       } catch (error: any) {
         console.log(error);
@@ -102,12 +137,15 @@ describe('SecurityApiClient', () => {
 
   describe('formatList', () => {
     it('should format list', async () => {
-      const mockResponse = JSON.parse(
-        readFileSync('src/capabilities/__tests__/resources/listSecurityProblems.json', 'utf8'),
-      );
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/listSecurityProblems.json', 'utf8')),
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listSecurityProblems();
+      const response = await client.listSecurityProblems(undefined, 'testAlias');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -128,10 +166,16 @@ describe('SecurityApiClient', () => {
         status: 'OPEN',
         title: `Security Problem ${i}`,
       }));
-      const response = {
-        totalCount: 123,
-        securityProblems: mockProblems,
-      };
+
+      const response: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            totalCount: 123,
+            securityProblems: mockProblems,
+          },
+        },
+      ];
 
       const result = client.formatList(response);
 
@@ -142,12 +186,18 @@ describe('SecurityApiClient', () => {
     });
 
     it('should format list when sparse problem', async () => {
-      const mockResponse = {
-        securityProblems: [{}],
-      };
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            securityProblems: [{}],
+          },
+        },
+      ];
 
-      const response = await client.listSecurityProblems();
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+
+      const response = await client.listSecurityProblems(undefined, 'testAlias');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -159,10 +209,15 @@ describe('SecurityApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listSecurityProblems();
+      const response = await client.listSecurityProblems(undefined, 'testAlias');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -170,10 +225,16 @@ describe('SecurityApiClient', () => {
     });
 
     it('should handle empty list', () => {
-      const response = {
-        totalCount: 0,
-        securityProblems: [],
-      };
+      const response: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            totalCount: 0,
+            securityProblems: [],
+          },
+        },
+      ];
+
       const result = client.formatList(response);
       expect(result).toContain('Listing 0 security vulnerabilities');
     });
@@ -181,28 +242,36 @@ describe('SecurityApiClient', () => {
 
   describe('formatProblemDetails', () => {
     it('should format details', async () => {
-      const mockResponse = JSON.parse(
-        readFileSync('src/capabilities/__tests__/resources/getSecurityProblemDetails.json', 'utf8'),
-      );
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getSecurityProblemDetails.json', 'utf8')),
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.getSecurityProblemDetails('my-id');
+      const response = await client.getSecurityProblemDetails('my-id', 'testAlias');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);
-      expect(result).toContain('Details of security problem in the following json');
+      expect(result).toContain('Details of security problem from environment testAlias in the following json');
       expect(result).toContain('"securityProblemId":"SP-123"');
     });
 
     it('should format details when sparse problem', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.getSecurityProblemDetails('my-id');
+      const response = await client.getSecurityProblemDetails('my-id', 'testAlias');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);
-      expect(result).toContain('Details of security problem in the following json');
+      expect(result).toContain('Details of security problem from environment testAlias in the following json');
       expect(result).toContain('{}');
     });
   });

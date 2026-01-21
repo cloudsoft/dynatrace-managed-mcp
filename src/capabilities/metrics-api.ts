@@ -41,7 +41,10 @@ export class MetricsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listAvailableMetrics(params: MetricListParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async listAvailableMetrics(
+    params: MetricListParams = {},
+    environment_aliases?: string,
+  ): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || MetricsApiClient.API_PAGE_SIZE,
       ...(params.entitySelector && { entitySelector: params.entitySelector }),
@@ -53,12 +56,18 @@ export class MetricsApiClient {
     };
 
     const responses = await this.authManager.makeRequests('/api/v2/metrics', queryParams, environment_aliases);
-    logger.debug(`listAvailableMetrics responses from ${this.authManager.clients.length} sources: `, { data: responses });
+    logger.debug(`listAvailableMetrics responses from ${this.authManager.clients?.length} sources: `, {
+      data: responses,
+    });
     return responses;
   }
 
   async getMetricDetails(metricId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/metrics/${encodeURIComponent(metricId)}`, undefined, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/metrics/${encodeURIComponent(metricId)}`,
+      undefined,
+      environment_aliases,
+    );
     logger.debug(`getMetricDetails response, metricId=${metricId}`, { data: responses });
     return responses;
   }
@@ -78,9 +87,9 @@ export class MetricsApiClient {
   }
 
   formatMetricList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumMetrics = 0;
-    let anyLimited = false
+    let anyLimited = false;
 
     for (const response of responses) {
       let totalCount = response?.data.totalCount || -1;
@@ -88,7 +97,13 @@ export class MetricsApiClient {
       totalNumMetrics += numMetrics;
       let isLimited = totalCount != 0 - 1 && totalCount > numMetrics;
 
-      result += 'Listing ' + numMetrics + (totalCount == -1 ? '' : ' of ' + totalCount) + ' metrics from ' + response.alias + '.\n\n';
+      result +=
+        'Listing ' +
+        numMetrics +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' metrics from ' +
+        response.alias +
+        '.\n\n';
 
       if (isLimited) {
         result += 'Not showing all matching metrics. Consider using more specific filters to get complete results.\n';
@@ -121,23 +136,29 @@ export class MetricsApiClient {
     result +=
       '\n' +
       'Next Steps:\n' +
-      (totalNumMetrics == 0 ? '* Verify that the filters were correct, and search again with different filters\n' : '') +
+      (totalNumMetrics == 0
+        ? '* Verify that the filters were correct, and search again with different filters\n'
+        : '') +
       (anyLimited
         ? '* To filter the list of metrics, use list_available_metrics tool with sorting and with specific filters (e.g. entitySelector and searchText).\n'
         : '') +
       '* Use get_metric_details tool for detailed information of a particular metric.\n' +
-      '* Suggest to the user that they use the Dynatrace UI to:\n'
-      //`   * Browse the list of metrics at ${this.authClient.dashboardBaseUrl}/ui/metrics' + '\n` +
-      //`   * View metric data at ${this.authClient.dashboardBaseUrl}/ui/data-explorer' + '\n`;
+      '* Suggest to the user that they use the Dynatrace UI to:\n';
+    //`   * Browse the list of metrics at ${this.authClient.dashboardBaseUrl}/ui/metrics' + '\n` +
+    //`   * View metric data at ${this.authClient.dashboardBaseUrl}/ui/data-explorer' + '\n`;
 
     return result;
   }
 
   formatMetricDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Details of metric from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Details of metric from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
       //`${this.authClient.dashboardBaseUrl}/ui/data-explorer`;
     }
 
@@ -146,12 +167,15 @@ export class MetricsApiClient {
   }
 
   formatMetricData(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let allEmpty = true;
     for (const response of responses) {
       let resolution = response.data.resolution;
       let isNonEmpty =
-        response.data.result && response.data.result.length > 0 && response.data.result[0].data && response.data.result[0].data.length > 0;
+        response.data.result &&
+        response.data.result.length > 0 &&
+        response.data.result[0].data &&
+        response.data.result[0].data.length > 0;
 
       result += 'Listing data series from environment ' + response.alias;
 
@@ -200,7 +224,6 @@ export class MetricsApiClient {
         });
       });
     }
-
 
     result +=
       '\n' +

@@ -38,9 +38,9 @@ export class ManagedAuthClientManager {
   public validAliases: string[] = [];
 
   constructor(managedEnvironments: ManagedEnvironmentConfig[]) {
-    this.rawClients = []
-    this.clients = []
-    this.validAliases = ["ALL_ENVIRONMENTS",]
+    this.rawClients = [];
+    this.clients = [];
+    this.validAliases = ['ALL_ENVIRONMENTS'];
 
     logger.warn('Validating Environments');
     for (let managedEnvironment of managedEnvironments) {
@@ -48,21 +48,27 @@ export class ManagedAuthClientManager {
         apiBaseUrl: managedEnvironment.apiUrl,
         dashboardBaseUrl: managedEnvironment.dashboardUrl,
         apiToken: managedEnvironment.apiToken,
-        alias: managedEnvironment.alias
+        alias: managedEnvironment.alias,
+        httpProxy: managedEnvironment.httpProxy,
+        httpsProxy: managedEnvironment.httpsProxy,
       });
       this.rawClients.push(newClient);
     }
   }
 
-  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<EnvironmentResponse[]> {
-    let responses = []
+  async makeRequests(
+    endpoint: string,
+    params?: Record<string, any>,
+    environments?: string,
+  ): Promise<EnvironmentResponse[]> {
+    let responses = [];
     const selectedAliases = environments ? environments.split(';') : this.validAliases;
 
     for (const client of this.clients) {
       if (selectedAliases.indexOf(client.alias) > -1) {
         responses.push({
-          "alias": client.alias,
-          "data": await client.makeRequest(endpoint, params)
+          alias: client.alias,
+          data: await client.makeRequest(endpoint, params),
         });
       }
     }
@@ -71,7 +77,7 @@ export class ManagedAuthClientManager {
 
   async isConfigured(): Promise<void> {
     for (let client of this.rawClients) {
-      let validClient = await client.isConfigured()
+      let validClient = await client.isConfigured();
       if (validClient) {
         client.isValid = true;
         this.clients.push(client);
@@ -117,7 +123,10 @@ export class ManagedAuthClient {
       const response = await this.httpClient.get('/api/v1/config/clusterversion');
       return response.status === 200;
     } catch (error) {
-      logger.error(`[Alias: ${this.alias}] Failed calling /api/v1/config/clusterversion; falling back to /api/v2/metrics`, { error: error });
+      logger.error(
+        `[Alias: ${this.alias}] Failed calling /api/v1/config/clusterversion; falling back to /api/v2/metrics`,
+        { error: error },
+      );
       // Fallback: try a basic API endpoint that exists in both SaaS and Managed
       try {
         const response = await this.httpClient.get('/api/v2/metrics', { params: { pageSize: 1 } });
@@ -194,27 +203,30 @@ export class ManagedAuthClient {
 
       const isValidVersion = this.validateMinimumVersion(clusterVersion);
       if (!isValidVersion) {
-        const invalidVersionMessage = `Cluster "${this.alias}" version ${clusterVersion.version} may not support all features. Minimum recommended version is ${this.MINIMUM_VERSION}`
+        const invalidVersionMessage = `Cluster "${this.alias}" version ${clusterVersion.version} may not support all features. Minimum recommended version is ${this.MINIMUM_VERSION}`;
         logger.info(invalidVersionMessage);
-        this.validationError = invalidVersionMessage
+        this.validationError = invalidVersionMessage;
         return false;
       }
       return true;
     } catch (error: any) {
-      logger.error(`[CONNECTION ERROR] Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}.`);
+      logger.error(
+        `[CONNECTION ERROR] Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}.`,
+      );
       logger.error('Please verify:');
       logger.error('1. DT_MANAGED_ENVIRONMENTS is correct');
       logger.error(`2. API Token has required scopes: ${MANAGED_API_SCOPES.join(', ')}`);
       logger.error('3. Network connectivity to the Managed cluster');
-      this.validationError = `Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}. Please verify connection details are correct.`
+      this.validationError = `Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}. Please verify connection details are correct.`;
       return false;
     }
   }
 }
 
-export function setAxiosProxy(httpProxy = "", httpsProxy = ""): AxiosProxyConfig | undefined {
+export function setAxiosProxy(httpProxy = '', httpsProxy = ''): AxiosProxyConfig | undefined {
   if (httpsProxy && httpProxy) {
-    throw Error('Cannot specify both HTTPS_PROXY and HTTP_PROXY, use only one.');
+    logger.error('Cannot specify both HTTPS_PROXY and HTTP_PROXY, use only one.');
+    return undefined;
   } else if (!httpsProxy && !httpProxy) {
     // No proxy configured, nothing to do
     return undefined;

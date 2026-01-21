@@ -49,13 +49,14 @@ describe('ProxyConfig', () => {
   it(
     'should use HTTP_PROXY',
     async () => {
-      process.env.HTTP_PROXY = proxyUrl;
-
       let client = new ManagedAuthClient({
         apiBaseUrl: 'http://example.com',
         dashboardBaseUrl: 'http://example-dashboard.com',
         apiToken: 'my-example-token',
+        alias: 'alias',
+        httpsProxy: proxyUrl,
       });
+
       const response = await client.makeRequest('/anything/mypath');
 
       console.log(`response: ${JSON.stringify(response)}`);

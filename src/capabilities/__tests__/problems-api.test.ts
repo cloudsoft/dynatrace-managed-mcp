@@ -1,18 +1,18 @@
 import { ProblemsApiClient, Problem } from '../problems-api';
-import { ManagedAuthClient } from '../../authentication/managed-auth-client';
+import { EnvironmentResponse, ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
 
 jest.mock('../../authentication/managed-auth-client');
 
 describe('ProblemsApiClient', () => {
-  let mockAuthClient: jest.Mocked<ManagedAuthClient>;
+  let mockAuthManager: jest.Mocked<ManagedAuthClientManager>;
   let client: ProblemsApiClient;
 
   beforeEach(() => {
-    mockAuthClient = {
-      makeRequest: jest.fn(),
+    mockAuthManager = {
+      makeRequests: jest.fn(),
     } as any;
-    client = new ProblemsApiClient(mockAuthClient);
+    client = new ProblemsApiClient(mockAuthManager);
   });
 
   afterEach(() => {
@@ -21,60 +21,92 @@ describe('ProblemsApiClient', () => {
 
   describe('listProblems', () => {
     it('should list problems with all parameters', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue({});
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const result = await client.listProblems({
-        from: 'now-24h',
-        to: 'now',
-        status: 'OPEN',
-        impactLevel: 'SERVICE',
-        pageSize: 25,
-        sort: '-startTime',
-      });
+      const result = await client.listProblems(
+        {
+          from: 'now-24h',
+          to: 'now',
+          status: 'OPEN',
+          impactLevel: 'SERVICE',
+          pageSize: 25,
+          sort: '-startTime',
+        },
+        'testAlias',
+      );
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/problems', {
-        pageSize: 25,
-        from: 'now-24h',
-        to: 'now',
-        status: 'OPEN',
-        impactLevel: 'SERVICE',
-        sort: '-startTime',
-      });
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith(
+        '/api/v2/problems',
+        {
+          pageSize: 25,
+          from: 'now-24h',
+          to: 'now',
+          status: 'OPEN',
+          impactLevel: 'SERVICE',
+          sort: '-startTime',
+        },
+        'testAlias',
+      );
       expect(result).toEqual(mockResponse);
     });
 
     it('should use default parameters when none provided', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const result = await client.listProblems();
+      const result = await client.listProblems({}, 'testAlias');
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/problems', {
-        pageSize: 50,
-      });
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith(
+        '/api/v2/problems',
+        {
+          pageSize: 50,
+        },
+        'testAlias',
+      );
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe('getProblemDetails', () => {
     it('should get problem details by ID', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const result = await client.getProblemDetails('PROBLEM-123');
+      const result = await client.getProblemDetails('PROBLEM-123', 'testAlias');
 
-      expect(mockAuthClient.makeRequest).toHaveBeenCalledWith('/api/v2/problems/PROBLEM-123');
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith('/api/v2/problems/PROBLEM-123', undefined, 'testAlias');
       expect(result).toEqual(mockResponse);
     });
   });
 
   describe('formatList', () => {
     it('should format list', async () => {
-      const mockResponse = JSON.parse(readFileSync('src/capabilities/__tests__/resources/listProblems.json', 'utf8'));
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/listProblems.json', 'utf8')),
+        },
+      ];
 
-      const response = await client.listProblems();
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+
+      const response = await client.listProblems(undefined, 'testAlias');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -89,10 +121,16 @@ describe('ProblemsApiClient', () => {
     });
 
     it('should format list when sparse problem', async () => {
-      const mockResponse = {
-        problems: [{}],
-      };
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            problems: [{}],
+          },
+        },
+      ];
+
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listProblems();
       const result = client.formatList(response);
@@ -109,8 +147,13 @@ describe('ProblemsApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listProblems();
       const result = client.formatList(response);
@@ -130,10 +173,15 @@ describe('ProblemsApiClient', () => {
         status: 'OPEN',
         startTime: 1640995200000 + i * 1000,
       }));
-      const response = {
-        totalCount: 123,
-        problems: mockProblems,
-      };
+      const response: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            totalCount: 123,
+            problems: mockProblems,
+          },
+        },
+      ];
 
       const result = client.formatList(response);
 
@@ -144,10 +192,15 @@ describe('ProblemsApiClient', () => {
     });
 
     it('should handle empty list', () => {
-      const response = {
-        totalCount: 0,
-        problems: [],
-      };
+      const response: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {
+            totalCount: 0,
+            problems: [],
+          },
+        },
+      ];
       const result = client.formatList(response);
       expect(result).toContain('Listing 0 problems');
     });
@@ -155,29 +208,38 @@ describe('ProblemsApiClient', () => {
 
   describe('formatProblemDetails', () => {
     it('should format details', async () => {
-      const mockResponse = JSON.parse(
-        readFileSync('src/capabilities/__tests__/resources/getProblemDetails.json', 'utf8'),
-      );
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getProblemDetails.json', 'utf8')),
+        },
+      ];
+
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getProblemDetails('845025139905093722_1763133360000V2');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);
-      expect(result).toContain('Details of problem in the following json');
+      expect(result).toContain('Details of problem from environment testAlias in the following json');
       expect(result).toContain('"problemId":"845025139905093722_1763133360000V2"');
       expect(result).toContain('"displayId":"P-2511153"');
     });
 
     it('should format details when sparse problem', async () => {
-      const mockResponse = {};
-      mockAuthClient.makeRequest.mockResolvedValue(mockResponse);
+      const mockResponse: EnvironmentResponse[] = [
+        {
+          alias: 'testAlias',
+          data: {},
+        },
+      ];
+      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getProblemDetails('my-id');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);
-      expect(result).toContain('Details of problem in the following json');
+      expect(result).toContain('Details of problem from environment testAlias in the following json');
       expect(result).toContain('{}');
     });
   });

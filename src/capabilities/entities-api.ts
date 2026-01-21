@@ -59,19 +59,40 @@ export class EntitiesApiClient {
   }
 
   async getEntityTypeDetails(entityType: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/entityTypes/${encodeURIComponent(entityType)}`, undefined, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/entityTypes/${encodeURIComponent(entityType)}`,
+      undefined,
+      environment_aliases,
+    );
     logger.debug(`getEntityTypeDetails response, entityType=${entityType}`, { data: responses });
     return responses;
   }
 
   async getEntityDetails(entityId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/entities/${encodeURIComponent(entityId)}`, undefined, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/entities/${encodeURIComponent(entityId)}`,
+      undefined,
+      environment_aliases,
+    );
     logger.debug(`getEntityDetails response, entityId=${entityId}`, { data: responses });
     return responses;
   }
 
   async getEntityRelationships(entityId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    return await this.getEntityDetails(entityId, environment_aliases);
+    const entityDetailsResponse = await this.getEntityDetails(entityId, environment_aliases);
+    let cleanResponses: EnvironmentResponse[] = [];
+    for (const response of entityDetailsResponse) {
+      cleanResponses.push({
+        alias: response.alias,
+        data: {
+          entityId: response.data.entityId,
+          fromRelationships: response.data.fromRelationships,
+          toRelationships: response.data.toRelationships,
+        },
+      });
+    }
+
+    return cleanResponses;
   }
 
   async queryEntities(params: EntityQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
@@ -90,16 +111,22 @@ export class EntitiesApiClient {
   }
 
   formatEntityList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumEntities = 0;
-    let anyLimited = false
+    let anyLimited = false;
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
       let numEntities = response.data.entities?.length || 0;
       totalNumEntities += numEntities;
       let isLimited = totalCount != 0 - 1 && totalCount > numEntities;
 
-      result += 'Listing ' + numEntities + (totalCount == -1 ? '' : ' of ' + totalCount) + ' entities from '+ response.alias +'.\n';
+      result +=
+        'Listing ' +
+        numEntities +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' entities from ' +
+        response.alias +
+        '.\n';
       if (isLimited) {
         result +=
           'Not showing all matching entities. Consider using more specific filters (entitySelector) to get complete results.\n';
@@ -162,7 +189,7 @@ export class EntitiesApiClient {
   }
 
   formatEntityTypeList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumTypes = 0;
     const commonTypes = [
       'SERVICE',
@@ -178,14 +205,20 @@ export class EntitiesApiClient {
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
       let numTypes = response.data.types?.length || 0;
-      totalNumTypes += numTypes
+      totalNumTypes += numTypes;
       let isLimited = totalCount != 0 - 1 && totalCount > numTypes;
 
       let entityTypes = response.data.types as any[];
       let conciseList = '';
       let availableCommonTypes: string[] = [];
 
-      result += 'Listing ' + numTypes + (totalCount == -1 ? '' : ' of ' + totalCount) + ' entity types.\n';
+      result +=
+        'Listing ' +
+        numTypes +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' entity types for environment ' +
+        response.alias +
+        '.\n';
       if (isLimited) {
         result += 'Not showing all matching entity types as there are too many.\n';
       }
@@ -204,7 +237,7 @@ export class EntitiesApiClient {
           availableCommonTypes.push(entityType);
         }
       });
-      result += '\n' + conciseList
+      result += '\n' + conciseList;
     }
 
     // Produce a simple strong list of all the types from the json (excluding all details).
@@ -220,23 +253,33 @@ export class EntitiesApiClient {
   }
 
   formatEntityTypeDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Entity type details from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Entity type details from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result +=  'Next Steps:\n' +
+    result +=
+      'Next Steps:\n' +
       '* To find entities of this type, use discover_entities tool, using the type in the entitySelector such as type("HOST") or type("SERVICE")\n';
     return result;
   }
 
   formatEntityDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Entity details from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Entity details from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result +=  'Next Steps:\n' +
+    result +=
+      'Next Steps:\n' +
       '* Use list_problems or list_events tools with the same entitySelector to check for relates issues and events.\n' +
       '* Suggest to the user that they view the entity in the Dynatrace UI using the entityId in the URL' +
       '\n';

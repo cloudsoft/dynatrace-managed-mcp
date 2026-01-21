@@ -11,13 +11,13 @@ export interface ManagedEnvironmentConfig {
 }
 
 export function parseManagedEnvironmentConfig(environmentInfo: JSONObject): ManagedEnvironmentConfig {
-  const environmentIdRaw = environmentInfo.environmentId ? environmentInfo.environmentId.toString(): "";
-  const apiUrlRaw = environmentInfo.apiEndpointUrl ? environmentInfo.apiEndpointUrl.toString(): "";
-  const dashboardUrlRaw = environmentInfo.dynatraceUrl ? environmentInfo.dynatraceUrl.toString(): "";
-  const apiToken = environmentInfo.apiToken ? environmentInfo.apiToken.toString() : "";
-  const alias = environmentInfo.alias ? environmentInfo.alias.toString() : "";
-  const httpProxy = environmentInfo.httpProxyUrl? environmentInfo.httpProxyUrl.toString(): "";
-  const httpsProxy = environmentInfo.httpsProxyUrl? environmentInfo.httpsProxyUrl.toString(): "";
+  const environmentIdRaw = environmentInfo.environmentId ? environmentInfo.environmentId.toString() : '';
+  const apiUrlRaw = environmentInfo.apiEndpointUrl ? environmentInfo.apiEndpointUrl.toString() : '';
+  const dashboardUrlRaw = environmentInfo.dynatraceUrl ? environmentInfo.dynatraceUrl.toString() : '';
+  const apiToken = environmentInfo.apiToken ? environmentInfo.apiToken.toString() : '';
+  const alias = environmentInfo.alias ? environmentInfo.alias.toString() : '';
+  const httpProxy = environmentInfo.httpProxyUrl ? environmentInfo.httpProxyUrl.toString() : '';
+  const httpsProxy = environmentInfo.httpsProxyUrl ? environmentInfo.httpsProxyUrl.toString() : '';
 
   let environmentId = environmentIdRaw.replace(/\/$/, ''); // Remove trailing slash
   let apiUrl = apiUrlRaw + (apiUrlRaw.endsWith('/') ? '' : '/') + 'e/' + environmentId;
@@ -31,7 +31,7 @@ export function parseManagedEnvironmentConfig(environmentInfo: JSONObject): Mana
     apiToken: apiToken,
     alias: alias,
     httpProxy: httpProxy,
-    httpsProxy: httpsProxy
+    httpsProxy: httpsProxy,
   };
 }
 
@@ -52,41 +52,47 @@ export function getManagedEnvironmentConfigs(): ManagedEnvironmentConfig[] {
   }
   let parsedManagedEnvironmentConfigs: ManagedEnvironmentConfig[] = [];
   for (const environmentConfig of environmentConfigurations) {
-    parsedManagedEnvironmentConfigs.push(
-      parseManagedEnvironmentConfig(environmentConfig)
-    )
+    parsedManagedEnvironmentConfigs.push(parseManagedEnvironmentConfig(environmentConfig));
   }
-  return parsedManagedEnvironmentConfigs
+  return parsedManagedEnvironmentConfigs;
 }
 
-export function validateEnvironments(environmentConfigurations: ManagedEnvironmentConfig[]): {"valid_configs": ManagedEnvironmentConfig[], "errors": string[]}  {
-  const requiredKeys = ['dashboardUrl', 'apiUrl', 'environmentId', 'alias', 'apiToken'];
-  const originalKeys = {'dashboardUrl': 'dynatraceUrl', 'apiUrl': 'apiEndpointUrl', 'environmentId': 'environmentId', 'alias': 'alias', 'apiToken': 'apiToken'};
+export function validateEnvironments(environmentConfigurations: ManagedEnvironmentConfig[]): {
+  valid_configs: ManagedEnvironmentConfig[];
+  errors: string[];
+} {
+  const requiredKeys = ['apiUrl', 'environmentId', 'alias', 'apiToken'];
+  const originalKeys = {
+    apiUrl: 'apiEndpointUrl',
+    environmentId: 'environmentId',
+    alias: 'alias',
+    apiToken: 'apiToken',
+  };
   let validConfigurations: ManagedEnvironmentConfig[] = [];
   let errors: string[] = [];
 
   environmentConfigurations.forEach((configuration, index) => {
-    const hasAllValues = requiredKeys.every(key => {
+    const hasAllValues = requiredKeys.every((key) => {
       const value = configuration[key as keyof typeof configuration];
 
       const isValid = value && value.length > 0;
       if (!isValid) {
         errors.push(
-          `Key "${originalKeys[key as keyof typeof originalKeys]}" is empty or missing (environment #${index}, alias: ${configuration.alias ? configuration.alias : 'N/A'}). Please make sure all values are present and populated in the configuration array.`
-        )
+          `Key "${originalKeys[key as keyof typeof originalKeys]}" is empty or missing (environment #${index}, alias: ${configuration.alias ? configuration.alias : 'N/A'}). Please make sure all values are present and populated in the configuration array.`,
+        );
       }
       return isValid;
     });
     const validAlias = configuration.alias.indexOf(';') == -1;
     if (!validAlias) {
       errors.push(
-        'Invalid alias found: "' + configuration.alias +'". Aliases are mandatory and cannot contain semicolons.'
-      )
+        'Invalid alias found: "' + configuration.alias + '". Aliases are mandatory and cannot contain semicolons.',
+      );
     }
     if (validAlias && hasAllValues) {
-      validConfigurations.push(configuration)
+      validConfigurations.push(configuration);
     }
-  })
+  });
 
-  return {"valid_configs": validConfigurations, "errors": errors}
+  return { valid_configs: validConfigurations, errors: errors };
 }

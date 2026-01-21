@@ -17,6 +17,7 @@ describe('ManagedAuthClient', () => {
       apiBaseUrl: 'https://managed.test.com',
       dashboardBaseUrl: 'https://managed-dashboard.test.com',
       apiToken: 'test-token',
+      alias: 'testAlias',
     });
   });
 
@@ -50,6 +51,7 @@ describe('ManagedAuthClient', () => {
         apiBaseUrl: 'https://managed.test.com',
         dashboardBaseUrl: 'https://managed-dashboard.test.com',
         apiToken: 'test-token',
+        alias: 'testAlias',
       });
 
       const result = await client.validateConnection();
