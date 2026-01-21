@@ -48,8 +48,8 @@ const main = async () => {
   const managedConfigs = getManagedEnvironmentConfigs();
   const validatedConfigs = validateEnvironments(managedConfigs);
 
-  const initErrors = validatedConfigs['errors']
-  const initConfigs = validatedConfigs['valid_configs']
+  const initErrors = validatedConfigs['errors'];
+  const initConfigs = validatedConfigs['valid_configs'];
 
   if (initErrors.length > 0) {
     logger.error('Failed to get managed environments configurations: ', { error: initErrors });
@@ -57,13 +57,13 @@ const main = async () => {
   }
 
   if (initConfigs.length === 0) {
-    logger.error('No valid environments found, stopping.')
+    logger.error('No valid environments found, stopping.');
     console.error('No valid environments found, stopping.');
     process.exit(1);
   }
 
   const authClientManager = new ManagedAuthClientManager(initConfigs);
-  await authClientManager.isConfigured()
+  await authClientManager.isConfigured();
 
   // Initialize API clients
   const metricsClient = new MetricsApiClient(authClientManager);
@@ -268,7 +268,7 @@ Never run queries that could return very large amounts of data, or that could be
   };
 
   const envAliasValidate = (alias: string) => {
-    if (alias == "ALL_ENVIRONMENTS") {
+    if (alias == 'ALL_ENVIRONMENTS') {
       return true;
     }
     const env_list = alias.split(';');
@@ -277,8 +277,8 @@ Never run queries that could return very large amounts of data, or that could be
         return false;
       }
     }
-    return true
-  }
+    return true;
+  };
 
   tool(
     'dynatrace_managed_check_for_configuration_errors',
@@ -287,7 +287,7 @@ Never run queries that could return very large amounts of data, or that could be
     {
       readOnlyHint: true,
     },
-    async({}) => {
+    async ({}) => {
       let resp = `Dynatrace Managed Environments Information - Listing configuration errors found during initialization:\n\n`;
       if (initErrors.length > 0) {
         resp += `Issues where found in environment configurations during start up: \n`;
@@ -298,9 +298,8 @@ Never run queries that could return very large amounts of data, or that could be
       }
 
       return resp;
-    }
-  )
-
+    },
+  );
 
   tool(
     'dynatrace_managed_get_environments_info',
@@ -377,22 +376,25 @@ Never run queries that could return very large amounts of data, or that could be
           (e.g., "first 16 metrics" → limit: 16, "500 metrics" → limit: 500).
           If not specified, returns up to API limit: ${MetricsApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({ entitySelector, searchText, limit, environment_alias}) => {
-      const responses = await metricsClient.listAvailableMetrics({
-        entitySelector: entitySelector,
-        text: searchText,
-        pageSize: limit,
-      }, environment_alias);
+    async ({ entitySelector, searchText, limit, environment_alias }) => {
+      const responses = await metricsClient.listAvailableMetrics(
+        {
+          entitySelector: entitySelector,
+          text: searchText,
+          pageSize: limit,
+        },
+        environment_alias,
+      );
       return metricsClient.formatMetricList(responses);
     },
   );
@@ -428,24 +430,27 @@ Never run queries that could return very large amounts of data, or that could be
           type(SERVICE),entityName.equals("exact-name"). Examples: entityId("SERVICE-123"),
           type(SERVICE),entityName("payment-service"), type(AWS_LAMBDA_FUNCTION),tag("AWS_REGION:us-west-2")`,
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ metricSelector, from, to, resolution, entitySelector, environment_alias }) => {
-      const responses = await metricsClient.queryMetrics({
-        metricSelector: metricSelector,
-        from: from,
-        to: to,
-        resolution: resolution,
-        entitySelector: entitySelector,
-      }, environment_alias);
+      const responses = await metricsClient.queryMetrics(
+        {
+          metricSelector: metricSelector,
+          from: from,
+          to: to,
+          resolution: resolution,
+          entitySelector: entitySelector,
+        },
+        environment_alias,
+      );
 
       return metricsClient.formatMetricData(responses);
     },
@@ -456,18 +461,18 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific metric.',
     {
       metricId: z.string().describe('The metric ID to get details for'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({ metricId, environment_alias  }) => {
-      const responses = await metricsClient.getMetricDetails(metricId, environment_alias );
+    async ({ metricId, environment_alias }) => {
+      const responses = await metricsClient.getMetricDetails(metricId, environment_alias);
       return metricsClient.formatMetricDetails(responses);
     },
   );
@@ -486,24 +491,27 @@ Never run queries that could return very large amounts of data, or that could be
       to: z.string().describe('End time (ISO format or relative like "now")'),
       limit: z.number().optional().describe('Maximum number of logs to return (default: 100)'),
       sort: z.string().optional().describe('Sort order for logs. Use "-timestamp" for most recent first.'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-        {
-          message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-        },
-      )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ query, from, to, limit, sort, environment_alias }) => {
-      const responses = await logsClient.queryLogs({
-        query: query,
-        from: from,
-        to: to,
-        limit: limit,
-        sort: sort
-      }, environment_alias);
+      const responses = await logsClient.queryLogs(
+        {
+          query: query,
+          from: from,
+          to: to,
+          limit: limit,
+          sort: sort,
+        },
+        environment_alias,
+      );
       return logsClient.formatList(responses);
     },
   );
@@ -537,24 +545,27 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           `Maximum number of events to return. Use this when user specifies a count (e.g., "first 20 events" → limit: 20). If not specified, returns up to API limit: ${EventsApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({ from, to, eventType, entitySelector, limit, environment_alias}) => {
-      const responses = await eventsClient.queryEvents({
-        from: from,
-        to: to,
-        eventType: eventType,
-        entitySelector: entitySelector,
-        pageSize: limit,
-      }, environment_alias);
+    async ({ from, to, eventType, entitySelector, limit, environment_alias }) => {
+      const responses = await eventsClient.queryEvents(
+        {
+          from: from,
+          to: to,
+          eventType: eventType,
+          entitySelector: entitySelector,
+          pageSize: limit,
+        },
+        environment_alias,
+      );
 
       return eventsClient.formatList(responses);
     },
@@ -565,12 +576,12 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific event.',
     {
       eventId: z.string().describe('The event ID to get details for'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
@@ -585,17 +596,17 @@ Never run queries that could return very large amounts of data, or that could be
     'dynatrace_managed_list_entity_types',
     'List all available entity types in the Managed cluster to understand what types of entities can be monitored.',
     {
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({environment_alias}) => {
+    async ({ environment_alias }) => {
       const responses = await entitiesClient.listEntityTypes(environment_alias);
       return entitiesClient.formatEntityTypeList(responses);
     },
@@ -606,12 +617,12 @@ Never run queries that could return very large amounts of data, or that could be
     'Get details of an entity type.',
     {
       type: z.string().describe('Name of the entity type, such as SERVICE, APPLICATION, HOST, etc'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
@@ -660,25 +671,28 @@ Never run queries that could return very large amounts of data, or that could be
         .string()
         .optional()
         .describe('Sort order for entities. Use "name" for ascending, "-name" for descending by display name.'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ entitySelector, mzSelector, from, to, limit, sort, environment_alias }) => {
-      const responses = await entitiesClient.queryEntities({
-        entitySelector: entitySelector,
-        pageSize: limit,
-        mzSelector: mzSelector,
-        from: from,
-        to: to,
-        sort: sort,
-      }, environment_alias);
+      const responses = await entitiesClient.queryEntities(
+        {
+          entitySelector: entitySelector,
+          pageSize: limit,
+          mzSelector: mzSelector,
+          from: from,
+          to: to,
+          sort: sort,
+        },
+        environment_alias,
+      );
       return entitiesClient.formatEntityList(responses);
     },
   );
@@ -688,17 +702,17 @@ Never run queries that could return very large amounts of data, or that could be
     'Get detailed information about a specific entity.',
     {
       entityId: z.string().describe('The entity ID to get details for'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({ entityId, environment_alias}) => {
+    async ({ entityId, environment_alias }) => {
       const response = await entitiesClient.getEntityDetails(entityId, environment_alias);
       return entitiesClient.formatEntityDetails(response);
     },
@@ -709,12 +723,12 @@ Never run queries that could return very large amounts of data, or that could be
     'Get relationships that a specific entity has "to" and "from" other entities.',
     {
       entityId: z.string().describe('The entity ID to get relationships for'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
@@ -759,26 +773,29 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Sort order. Use "+status" (open first), "-status" (closed first), "+startTime" (old first), "-startTime" (new first), or "+relevance"/"-relevance" (with text search).',
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ from, to, status, impactLevel, entitySelector, limit, sort, environment_alias }) => {
-      const responses = await problemsClient.listProblems({
-        from: from || 'now-24h',
-        to: to || 'now',
-        status: status,
-        impactLevel: impactLevel,
-        entitySelector: entitySelector,
-        pageSize: limit,
-        sort: sort,
-      }, environment_alias);
+      const responses = await problemsClient.listProblems(
+        {
+          from: from || 'now-24h',
+          to: to || 'now',
+          status: status,
+          impactLevel: impactLevel,
+          entitySelector: entitySelector,
+          pageSize: limit,
+          sort: sort,
+        },
+        environment_alias,
+      );
 
       return problemsClient.formatList(responses);
     },
@@ -791,12 +808,12 @@ Never run queries that could return very large amounts of data, or that could be
       problemId: z
         .string()
         .describe('The internal problem ID (UUID format) from list_problems - NOT the displayId (P-XXXXX)'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
@@ -833,26 +850,29 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Sort order. Examples: "+status" (open first), "-riskAssessment.riskScore" (highest risk first), "+firstSeenTimestamp" (newest first), "-lastUpdatedTimestamp" (recently updated first).',
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ riskLevel, status, entitySelector, from, to, limit, sort, environment_alias }) => {
-      const responses = await securityClient.listSecurityProblems({
-        riskLevel: riskLevel,
-        status: status,
-        entitySelector: entitySelector,
-        from: from,
-        to: to,
-        pageSize: limit,
-        sort: sort,
-      }, environment_alias);
+      const responses = await securityClient.listSecurityProblems(
+        {
+          riskLevel: riskLevel,
+          status: status,
+          entitySelector: entitySelector,
+          from: from,
+          to: to,
+          pageSize: limit,
+          sort: sort,
+        },
+        environment_alias,
+      );
 
       return securityClient.formatList(responses);
     },
@@ -865,12 +885,12 @@ Never run queries that could return very large amounts of data, or that could be
       securityProblemId: z
         .string()
         .describe('The security problem ID (UUID format) from list_security_problems - NOT the displayId (S-XXXXX)'),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
@@ -927,29 +947,44 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           `Maximum number of SLOs to return. Use this when user specifies a count (e.g., "first 15 SLOs" → limit: 15). If not specified, returns up to API limit: ${SloApiClient.API_PAGE_SIZE}`,
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
-    async ({ sloSelector, timeFrame, from, to, evaluate, sort, enabledSlos, showGlobalSlos, demo, limit, environment_alias }) => {
-      const responses = await sloClient.listSlos({
-        sloSelector: sloSelector,
-        timeFrame: timeFrame,
-        from: from,
-        to: to,
-        evaluate: evaluate,
-        sort: sort,
-        enabledSlos: enabledSlos,
-        showGlobalSlos: showGlobalSlos,
-        demo: demo,
-        pageSize: limit,
-      }, environment_alias);
+    async ({
+      sloSelector,
+      timeFrame,
+      from,
+      to,
+      evaluate,
+      sort,
+      enabledSlos,
+      showGlobalSlos,
+      demo,
+      limit,
+      environment_alias,
+    }) => {
+      const responses = await sloClient.listSlos(
+        {
+          sloSelector: sloSelector,
+          timeFrame: timeFrame,
+          from: from,
+          to: to,
+          evaluate: evaluate,
+          sort: sort,
+          enabledSlos: enabledSlos,
+          showGlobalSlos: showGlobalSlos,
+          demo: demo,
+          pageSize: limit,
+        },
+        environment_alias,
+      );
       return sloClient.formatList(responses);
     },
   );
@@ -970,23 +1005,26 @@ Never run queries that could return very large amounts of data, or that could be
         .describe(
           'Time frame for SLO evaluation: "CURRENT" for SLO\'s own timeframe, "GTF" for custom timeframe specified by from and to parameters',
         ),
-      environment_alias: z.string().describe('Specifically hits one environment. Blank for all.')
-        .refine((alias) => envAliasValidate(alias),
-          {
-            message: "Environment alias(es) not valid. Options are: " + authClientManager.validAliases.join(", ")
-          },
-        )
+      environment_alias: z
+        .string()
+        .describe('Specifically hits one environment. Blank for all.')
+        .refine((alias) => envAliasValidate(alias), {
+          message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
+        }),
     },
     {
       readOnlyHint: true,
     },
     async ({ sloId, from, to, timeFrame, environment_alias }) => {
-      const response = await sloClient.getSloDetails({
-        id: sloId,
-        from: from,
-        to: to,
-        timeFrame: timeFrame,
-      }, environment_alias);
+      const response = await sloClient.getSloDetails(
+        {
+          id: sloId,
+          from: from,
+          to: to,
+          timeFrame: timeFrame,
+        },
+        environment_alias,
+      );
       return sloClient.formatDetails(response);
     },
   );

@@ -58,7 +58,10 @@ export class SecurityApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listSecurityProblems(params: SecurityProblemQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async listSecurityProblems(
+    params: SecurityProblemQueryParams = {},
+    environment_aliases?: string,
+  ): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || SecurityApiClient.API_PAGE_SIZE,
       ...(params.riskLevel && { riskLevel: params.riskLevel }),
@@ -75,15 +78,19 @@ export class SecurityApiClient {
   }
 
   async getSecurityProblemDetails(problemId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/securityProblems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/securityProblems/${encodeURIComponent(problemId)}`,
+      undefined,
+      environment_aliases,
+    );
     logger.debug('getSecurityProblemDetails response', { data: responses });
     return responses;
   }
 
   formatList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumProblems = 0;
-    let anyLimited = false
+    let anyLimited = false;
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
       let numProblems = response.data.securityProblems?.length || 0;
@@ -94,7 +101,9 @@ export class SecurityApiClient {
         'Listing ' +
         numProblems +
         (totalCount == -1 ? '' : ' of ' + totalCount) +
-        ' security vulnerabilities from ' + response.alias + ' in the following json.\n';
+        ' security vulnerabilities from ' +
+        response.alias +
+        ' in the following json.\n';
 
       if (isLimited) {
         result +=
@@ -127,7 +136,6 @@ export class SecurityApiClient {
       });
     }
 
-
     result +=
       '\n' +
       'Next Steps:\n' +
@@ -135,7 +143,9 @@ export class SecurityApiClient {
         ? '* Verify that the filters such as entitySelector, status and time range were correct, and search again with different filters.\n'
         : '') +
       (anyLimited ? '* Use more restrictive filters, such as a more specific entitySelector and status.\n' : '') +
-      (totalNumProblems > 1 ? '* Use sort (e.g. with "-riskAssessment.riskScore" for highest risk score first).\n' : '') +
+      (totalNumProblems > 1
+        ? '* Use sort (e.g. with "-riskAssessment.riskScore" for highest risk score first).\n'
+        : '') +
       '* If the user is interested in a specific vulnerability, use the get_security_problem_details tool. Use the securityProblemId for this.\n' +
       '* Suggest to the user that they view the security vulnerabilties in the Dynatrace UI.' +
       //`${this.authClient.dashboardBaseUrl}/ui/security/overview for an overview,` +
@@ -146,12 +156,17 @@ export class SecurityApiClient {
   }
 
   formatDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Details of security problem from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Details of security problem from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result +=  'Next Steps:\n' +
+    result +=
+      'Next Steps:\n' +
       '* If there are affectedEntities, suggest to the user that they could get further information about those entities with get_entity_detais tool, using the entityId.\n' +
       '* Suggest to the user that they view the security vulnerability in the Dynatrace UI using the securityProblemId in the URL\n';
     return result;

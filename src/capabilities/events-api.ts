@@ -46,15 +46,19 @@ export class EventsApiClient {
   }
 
   async getEventDetails(eventId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/events/${encodeURIComponent(eventId)}`, undefined, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/events/${encodeURIComponent(eventId)}`,
+      undefined,
+      environment_aliases,
+    );
     logger.debug('getEventDetails response: ', { data: responses });
     return responses;
   }
 
   formatList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumEvents = 0;
-    let anyLimited = false
+    let anyLimited = false;
 
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
@@ -62,7 +66,13 @@ export class EventsApiClient {
       totalNumEvents += numEvents;
       let isLimited = totalCount != 0 - 1 && totalCount > numEvents;
 
-      result += 'Listing ' + numEvents + (totalCount == -1 ? '' : ' of ' + totalCount) + ' events from ' + response.alias + '.\n\n';
+      result +=
+        'Listing ' +
+        numEvents +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' events from ' +
+        response.alias +
+        '.\n\n';
 
       if (isLimited) {
         result +=
@@ -128,13 +138,19 @@ export class EventsApiClient {
   }
 
   formatDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Event details from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Event details from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result += 'Next Steps:\n' +
-      '* Suggest to the user that they explore this further in the Dynatrace UI.' + '\n' +
+    result +=
+      'Next Steps:\n' +
+      '* Suggest to the user that they explore this further in the Dynatrace UI.' +
+      '\n' +
       '* Use list_problems to see what problems Dynatrace knows of, if not already done so.\n';
     return result;
   }

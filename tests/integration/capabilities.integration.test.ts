@@ -30,7 +30,7 @@ import { logger } from '../../src/utils/logger';
 config();
 
 let skip = false;
-if (!process.env.DT_MANAGED_ENVIRONMENT || !process.env.DT_API_ENDPOINT_URL || !process.env.DT_MANAGED_API_TOKEN) {
+if (!process.env.DT_ENVIRONMENT_CONFIGS) {
   console.log('Skipping integration tests - environment not configured');
   skip = true;
 }
@@ -43,12 +43,20 @@ if (!process.env.DT_MANAGED_ENVIRONMENT || !process.env.DT_API_ENDPOINT_URL || !
   let problemsClient: ProblemsApiClient;
   let securityClient: SecurityApiClient;
   let sloClient: SloApiClient;
+  let authManager: ManagedAuthClientManager;
 
   beforeAll(() => {
     const config = getManagedEnvironmentConfigs();
     const validEnvironments = validateEnvironments(config);
 
-    const authManager = new ManagedAuthClientManager(validEnvironments['valid_configs']);
+    authManager = new ManagedAuthClientManager(validEnvironments['valid_configs']);
+
+    // Forcing clients to be valid, so we don't have to call isConfigured() before each.
+    for (const authClient of authManager.rawClients) {
+      authClient.isValid = true;
+    }
+
+    authManager.clients = authManager.rawClients;
 
     metricsClient = new MetricsApiClient(authManager);
     logsClient = new LogsApiClient(authManager);
@@ -220,7 +228,7 @@ if (!process.env.DT_MANAGED_ENVIRONMENT || !process.env.DT_API_ENDPOINT_URL || !
         fail('Cannot find eventId from queryEvents; cannot test getEventDetails; aborting');
       }
 
-      const response = await eventsClient.getEventDetails(eventId);
+      const response = await eventsClient.getEventDetails(eventId, 'testAlias');
       const result = eventsClient.formatDetails(response);
       expect(response).toBeDefined();
       expect(typeof result).toBe('string');
@@ -298,7 +306,7 @@ if (!process.env.DT_MANAGED_ENVIRONMENT || !process.env.DT_API_ENDPOINT_URL || !
         fail('Cannot find entityId from queryEntities; cannot test getEntityDetails; aborting');
       }
 
-      const response = await entitiesClient.getEntityDetails(entityId);
+      const response = await entitiesClient.getEntityDetails(entityId, 'testAlias');
       const result = entitiesClient.formatEntityDetails(response);
       expect(response).toBeDefined();
       expect(typeof result).toBe('string');

@@ -73,7 +73,7 @@ export class ProblemsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listProblems(params: ProblemQueryParams = {}, environment_aliases? : string): Promise<EnvironmentResponse[]> {
+  async listProblems(params: ProblemQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
     const queryParams = {
       pageSize: params.pageSize || ProblemsApiClient.API_PAGE_SIZE,
       ...(params.from && { from: params.from }),
@@ -90,24 +90,34 @@ export class ProblemsApiClient {
     return responses;
   }
 
-  async getProblemDetails(problemId: string, environment_aliases? : string): Promise<EnvironmentResponse[]> {
-    const responses = await this.authManager.makeRequests(`/api/v2/problems/${encodeURIComponent(problemId)}`, undefined, environment_aliases);
+  async getProblemDetails(problemId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/problems/${encodeURIComponent(problemId)}`,
+      undefined,
+      environment_aliases,
+    );
 
     logger.debug('getProblemDetails response', { data: responses });
     return responses;
   }
 
   formatList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumProblems = 0;
-    let anyLimited = false
+    let anyLimited = false;
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
       let numProblems = response.data.problems?.length || 0;
       totalNumProblems += numProblems;
       let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
 
-      result += 'Listing ' + numProblems + (totalCount == -1 ? '' : ' of ' + totalCount) + ' problems from ' + response.alias + '.\n\n';
+      result +=
+        'Listing ' +
+        numProblems +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' problems from ' +
+        response.alias +
+        '.\n\n';
 
       if (isLimited) {
         result +=
@@ -142,22 +152,28 @@ export class ProblemsApiClient {
       (anyLimited ? '* Use more restrictive filters, such as a more specific entitySelector.\n' : '') +
       (totalNumProblems > 1 ? '* Use sort (e.g. with "+status" for open problems first).\n' : '') +
       '* Suggest to the user that they view the problems in the Dynatrace UI.' +
-      '\n' + '* If the user is interested in a specific problem, use the get_problem_details tool. ' +
+      '\n' +
+      '* If the user is interested in a specific problem, use the get_problem_details tool. ' +
       'Use the problemId (UUID) for detailed analysis.\n';
 
     return result;
   }
 
   formatDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Details of problem from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Details of problem from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result += 'Next Steps:\n' +
+    result +=
+      'Next Steps:\n' +
       '* If the affectedEntities is not empty, suggest to the user that they could investigate those entities further. For example with:\n' +
-      ("   * list_events tool, using the affected entity's entityId in the entitySelector.\n") +
-      ('   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n');
+      "   * list_events tool, using the affected entity's entityId in the entitySelector.\n" +
+      '   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n';
     return result;
   }
 }

@@ -43,9 +43,9 @@ export class LogsApiClient {
   }
 
   formatList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumLogs = 0;
-    let anyLimited = false
+    let anyLimited = false;
     for (const response of responses) {
       let numLogs = response.data.results?.length || 0;
       totalNumLogs = totalNumLogs + numLogs;
@@ -90,8 +90,8 @@ export class LogsApiClient {
       });
     }
 
-
-    result = result +
+    result =
+      result +
       '\n' +
       'Next Steps:\n' +
       (totalNumLogs == 0 ? '* Try broader search terms or expand the time range\n' : '') +

@@ -93,22 +93,27 @@ export class SloApiClient {
       queryParams.timeFrame = 'GTF';
     }
 
-    const responses = await this.authManager.makeRequests(`/api/v2/slo/${encodeURIComponent(params.id)}`, queryParams, environment_aliases);
+    const responses = await this.authManager.makeRequests(
+      `/api/v2/slo/${encodeURIComponent(params.id)}`,
+      queryParams,
+      environment_aliases,
+    );
     logger.debug('getSLODetails response', { data: responses });
     return responses;
   }
 
   formatList(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     let totalNumSlo = 0;
-    let anyLimited = false
+    let anyLimited = false;
     for (const response of responses) {
       let totalCount = response.data.totalCount || -1;
       let numSLOs = response.data.slo?.length || 0;
       totalNumSlo += numSLOs;
       let isLimited = totalCount != 0 - 1 && totalCount > numSLOs;
 
-      result += 'Listing ' + numSLOs + (totalCount == -1 ? '' : ' of ' + totalCount) + ' SLOs. from ' + response.alias + ':\n';
+      result +=
+        'Listing ' + numSLOs + (totalCount == -1 ? '' : ' of ' + totalCount) + ' SLOs. from ' + response.alias + ':\n';
 
       if (isLimited) {
         result +=
@@ -161,13 +166,16 @@ export class SloApiClient {
   }
 
   formatDetails(responses: EnvironmentResponse[]): string {
-    let result = "";
+    let result = '';
     for (const response of responses) {
-      result += 'Details of SLO from environment ' + response.alias + ' in the following json:\n' +
-        JSON.stringify(response.data) + '\n';
+      result +=
+        'Details of SLO from environment ' +
+        response.alias +
+        ' in the following json:\n' +
+        JSON.stringify(response.data) +
+        '\n';
     }
-    result += 'Next Steps:\n' +
-      '* Suggest to the user that they explore this further in the Dynatrace UI.' + '\n';
+    result += 'Next Steps:\n' + '* Suggest to the user that they explore this further in the Dynatrace UI.' + '\n';
     return result;
   }
 }
