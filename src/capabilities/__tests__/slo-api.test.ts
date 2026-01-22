@@ -1,7 +1,6 @@
 import { SloApiClient, SLO } from '../slo-api';
 import { ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
-import { SecurityApiClient } from '../security-api';
 
 jest.mock('../../authentication/managed-auth-client');
 

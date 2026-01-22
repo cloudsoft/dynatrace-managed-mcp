@@ -59,22 +59,6 @@ export interface SecurityProblem {
   lastUpdatedTimestamp?: number;
 }
 
-export interface SecurityProblemDetail extends SecurityProblem {
-  description?: string;
-  remediationItems?: Array<{
-    id: string;
-    name: string;
-    type: string;
-    state: string;
-  }>;
-  events?: Array<{
-    eventType: string;
-    timestamp: number;
-    entityId?: string;
-  }>;
-  codeLocations?: any[];
-}
-
 export class SecurityApiClient {
   static readonly API_PAGE_SIZE = 200;
   static readonly MAX_CVES_DISPLAY = 11;

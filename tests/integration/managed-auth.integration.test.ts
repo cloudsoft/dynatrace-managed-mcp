@@ -49,7 +49,7 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
 
   it('should validate minimum version requirement', async () => {
     const version = await client.getClusterVersion();
-    const isValidVersion = await client.validateMinimumVersion(version);
+    const isValidVersion = client.validateMinimumVersion(version);
     expect(typeof isValidVersion).toBe('boolean');
   }, 30000);
 });

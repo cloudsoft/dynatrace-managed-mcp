@@ -21,7 +21,6 @@ import { SloApiClient } from './capabilities/slo-api';
 
 // Import logger after environment is loaded
 import { logger } from './utils/logger';
-import { transport } from 'winston';
 
 logger.info('Starting Dynatrace Managed MCP');
 

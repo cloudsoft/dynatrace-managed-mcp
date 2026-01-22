@@ -31,12 +31,6 @@ export interface Event {
   customProperties?: Record<string, any>;
 }
 
-export interface EventSearchResult {
-  events: Event[];
-  totalCount: number;
-  nextPageKey?: string;
-}
-
 export class EventsApiClient {
   static readonly API_PAGE_SIZE = 100;
   static readonly MAX_PROPERTIES_DISPLAY = 11;

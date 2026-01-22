@@ -28,13 +28,6 @@ export interface LogEntry {
   [key: string]: any;
 }
 
-export interface LogSearchResult {
-  results: LogEntry[];
-  totalCount: number;
-  nextPageKey?: string;
-  sliceSize?: number;
-}
-
 export class LogsApiClient {
   private static readonly API_PAGE_SIZE = 1000;
 

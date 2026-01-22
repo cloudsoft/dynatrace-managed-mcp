@@ -53,13 +53,6 @@ export interface Tag {
   value?: string;
 }
 
-export interface Relationship {
-  id?: string;
-  type?: string;
-  fromEntityId?: string;
-  toEntityId?: string;
-}
-
 export interface EntityType {
   type?: string;
   displayName?: string;

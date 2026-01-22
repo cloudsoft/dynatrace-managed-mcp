@@ -51,22 +51,16 @@ export class ManagedAuthClientManager {
     }
   }
 
-  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<any> {
-    let responses = [];
+  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<Map<string, any>> {
     const selectedAliases = environments ? environments.split(';') : this.validAliases;
-    let myMap = new Map<string, any>();
+    let responses = new Map<string, any>();
     for (const client of this.clients) {
       if (selectedAliases.indexOf(client.alias) > -1) {
-        responses.push({
-          alias: client.alias,
-          data: await client.makeRequest(endpoint, params),
-        });
-
-        const r = await client.makeRequest(endpoint, params);
-        myMap.set(client.alias, r);
+        const response = await client.makeRequest(endpoint, params);
+        responses.set(client.alias, response);
       }
     }
-    return myMap;
+    return responses;
   }
 
   async isConfigured(): Promise<void> {
