@@ -34,6 +34,14 @@ describe('getManagedEnvironmentConfig', () => {
     '    "environmentId": "my-env-id-4",' +
     '    "alias": "only-required-keys-env-4",' +
     '    "apiToken": "my-api-token"' +
+    '  },' +
+    '  {' +
+    '    "dynatraceUrl": "https://my-dashboard-endpoint.com",' +
+    '    "environmentId": "my-env-id-5",' +
+    '    "alias": "missing-api-url-env-5",' +
+    '    "apiToken": "my-api-token",' +
+    '    "httpProxyUrl": "",' +
+    '    "httpsProxyUrl": ""' +
     '  }' +
     ']';
 
@@ -86,6 +94,15 @@ describe('getManagedEnvironmentConfig', () => {
         httpProxy: '',
         httpsProxy: '',
       },
+      {
+        environmentId: 'my-env-id-5',
+        dashboardUrl: 'https://my-dashboard-endpoint.com/e/my-env-id-5',
+        apiUrl: '',
+        apiToken: 'my-api-token',
+        alias: 'missing-api-url-env-5',
+        httpProxy: '',
+        httpsProxy: '',
+      },
     ]);
   });
 
@@ -122,6 +139,7 @@ describe('getManagedEnvironmentConfig', () => {
     expect(errors).toEqual([
       'Invalid alias found: "invalid-alias-env-id;-2". Aliases are mandatory and cannot contain semicolons.',
       'Key "apiToken" is empty or missing (environment #2, alias: missing-api-key-env-id-3). Please make sure all values are present and populated in the configuration array.',
+      'Key "apiEndpointUrl" is empty or missing (environment #4, alias: missing-api-url-env-5). Please make sure all values are present and populated in the configuration array.',
     ]);
   });
 

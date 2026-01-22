@@ -20,7 +20,10 @@ export function parseManagedEnvironmentConfig(environmentInfo: JSONObject): Mana
   const httpsProxy = environmentInfo.httpsProxyUrl ? environmentInfo.httpsProxyUrl.toString() : '';
 
   let environmentId = environmentIdRaw.replace(/\/$/, ''); // Remove trailing slash
-  let apiUrl = apiUrlRaw + (apiUrlRaw.endsWith('/') ? '' : '/') + 'e/' + environmentId;
+  let apiUrl = '';
+  if (apiUrlRaw != '') {
+    apiUrl = apiUrlRaw + (apiUrlRaw.endsWith('/') ? '' : '/') + 'e/' + environmentId;
+  }
   let dashboardUrl = dashboardUrlRaw ? dashboardUrlRaw : apiUrlRaw;
   dashboardUrl = dashboardUrl + (dashboardUrl.endsWith('/') ? '' : '/') + 'e/' + environmentId;
 
