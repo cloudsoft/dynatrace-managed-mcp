@@ -75,6 +75,22 @@ export class ManagedAuthClientManager {
     return responses;
   }
 
+  async makeRequests2(
+    endpoint: string,
+    params?: Record<string, any>,
+    environments?: string,
+  ): Promise<Map<String, any>> {
+    let responses = new Map<String, any>();
+    const selectedAliases = environments ? environments.split(';') : this.validAliases;
+
+    for (const client of this.clients) {
+      if (selectedAliases.indexOf(client.alias) > -1) {
+        responses.set(client.alias, await client.makeRequest(endpoint, params));
+      }
+    }
+    return responses;
+  }
+
   async isConfigured(): Promise<void> {
     for (let client of this.rawClients) {
       let validClient = await client.isConfigured();

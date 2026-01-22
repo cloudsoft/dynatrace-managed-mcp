@@ -11,6 +11,7 @@ describe('EntitiesApiClient', () => {
   beforeEach(() => {
     mockAuthManager = {
       makeRequests: jest.fn(),
+      makeRequests2: jest.fn(),
     } as any;
     client = new EntitiesApiClient(mockAuthManager);
   });
@@ -127,14 +128,10 @@ describe('EntitiesApiClient', () => {
 
   describe('formatEntityTypes', () => {
     it('should format list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/listEntityTypes.json', 'utf8')),
-        },
-      ];
-
-      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+      const mockResponse = new Map([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/listEntityTypes.json', 'utf8'))],
+      ]);
+      mockAuthManager.makeRequests2.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
       const result = client.formatEntityTypeList(response);
@@ -144,15 +141,8 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format list when sparse', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
-            types: [{}],
-          },
-        },
-      ];
-      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+      const mockResponse = new Map([['testAlias', { types: [{}] }]]);
+      mockAuthManager.makeRequests2.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
       const result = client.formatEntityTypeList(response);
@@ -162,13 +152,8 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
-      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+      const mockResponse = new Map([['testAlias', {}]]);
+      mockAuthManager.makeRequests2.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
       const result = client.formatEntityTypeList(response);
@@ -178,16 +163,8 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should handle empty list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
-            totalCount: 0,
-            types: [],
-          },
-        },
-      ];
-      mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
+      const mockResponse = new Map([['testAlias', { totalCount: 0, types: [] }]]);
+      mockAuthManager.makeRequests2.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
       const result = client.formatEntityTypeList(response);

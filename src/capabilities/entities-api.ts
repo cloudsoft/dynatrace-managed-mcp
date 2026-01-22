@@ -11,6 +11,20 @@ export interface EntityQueryParams {
   sort?: string;
 }
 
+export interface ListEntityTypesResponse {
+  types?: EntityType[];
+  totalCount?: number;
+  pageSize?: number;
+  nextPageKey?: string;
+}
+
+export interface ListEntitiesResponse {
+  entities?: Entity[];
+  totalCount?: number;
+  pageSize?: number;
+  nextPageKey?: string;
+}
+
 // Could be a list or a map; hence using 'any'
 // e.g. see example response body at https://docs.dynatrace.com/docs/discover-dynatrace/references/dynatrace-api/environment-api/entity-v2/get-entity
 export interface GetEntityRelationshipsResponse {
@@ -39,6 +53,19 @@ export interface Tag {
   value?: string;
 }
 
+export interface Relationship {
+  id?: string;
+  type?: string;
+  fromEntityId?: string;
+  toEntityId?: string;
+}
+
+export interface EntityType {
+  type?: string;
+  displayName?: string;
+  properties?: string[];
+}
+
 export class EntitiesApiClient {
   static readonly API_PAGE_SIZE = 100;
   static readonly MAX_TAGS_DISPLAY = 11;
@@ -47,13 +74,13 @@ export class EntitiesApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listEntityTypes(environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async listEntityTypes(environment_aliases?: string): Promise<Map<String, ListEntityTypesResponse>> {
     // Deliberately large page size; will format this concisely rather than returning all json in tool response.
     // Want to get all of them (with reason), otherwise trying to pull out common types won't work.
     const params: Record<string, any> = {
       pageSize: 500,
     };
-    const responses = await this.authManager.makeRequests('/api/v2/entityTypes', params, environment_aliases);
+    const responses = await this.authManager.makeRequests2('/api/v2/entityTypes', params, environment_aliases);
     logger.debug('listEntityTypes response', { data: responses });
     return responses;
   }
@@ -188,7 +215,7 @@ export class EntitiesApiClient {
     return result;
   }
 
-  formatEntityTypeList(responses: EnvironmentResponse[]): string {
+  formatEntityTypeList(responses: Map<String, ListEntityTypesResponse>): string {
     let result = '';
     let totalNumTypes = 0;
     const commonTypes = [
@@ -202,13 +229,13 @@ export class EntitiesApiClient {
       'AZURE_WEB_APP',
     ];
 
-    for (const response of responses) {
-      let totalCount = response.data.totalCount || -1;
-      let numTypes = response.data.types?.length || 0;
+    for (const [alias, data] of responses) {
+      let totalCount = data.totalCount || -1;
+      let numTypes = data.types?.length || 0;
       totalNumTypes += numTypes;
       let isLimited = totalCount != 0 - 1 && totalCount > numTypes;
 
-      let entityTypes = response.data.types as any[];
+      let entityTypes = data.types as any[];
       let conciseList = '';
       let availableCommonTypes: string[] = [];
 
@@ -217,7 +244,7 @@ export class EntitiesApiClient {
         numTypes +
         (totalCount == -1 ? '' : ' of ' + totalCount) +
         ' entity types for environment ' +
-        response.alias +
+        alias +
         '.\n';
       if (isLimited) {
         result += 'Not showing all matching entity types as there are too many.\n';
