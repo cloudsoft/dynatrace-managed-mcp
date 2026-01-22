@@ -1,11 +1,6 @@
 import { SecurityApiClient, SecurityProblem } from '../security-api';
-import {
-  EnvironmentResponse,
-  ManagedAuthClient,
-  ManagedAuthClientManager,
-} from '../../authentication/managed-auth-client';
+import { ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
-import { EventsApiClient } from '../events-api';
 
 jest.mock('../../authentication/managed-auth-client');
 
@@ -26,12 +21,7 @@ describe('SecurityApiClient', () => {
 
   describe('listSecurityProblems', () => {
     it('should list security problems with default parameters', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.listSecurityProblems(undefined, 'testAlias');
@@ -47,12 +37,7 @@ describe('SecurityApiClient', () => {
     });
 
     it('should list security problems with all parameters', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: { securityProblems: [] },
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', { securityProblems: [] }]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       await client.listSecurityProblems(
@@ -100,14 +85,7 @@ describe('SecurityApiClient', () => {
 
   describe('getSecurityProblemDetails', () => {
     it('should get security problem details', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
-            securityProblemId: 'SP-123',
-          },
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', { securityProblemId: 'SP-123' }]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.getSecurityProblemDetails('SP-123', 'testAlias');
@@ -137,12 +115,12 @@ describe('SecurityApiClient', () => {
 
   describe('formatList', () => {
     it('should format list', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/listSecurityProblems.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          JSON.parse(readFileSync('src/capabilities/__tests__/resources/listSecurityProblems.json', 'utf8')),
+        ],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listSecurityProblems(undefined, 'testAlias');
@@ -167,15 +145,15 @@ describe('SecurityApiClient', () => {
         title: `Security Problem ${i}`,
       }));
 
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 123,
             securityProblems: mockProblems,
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
 
@@ -186,14 +164,7 @@ describe('SecurityApiClient', () => {
     });
 
     it('should format list when sparse problem', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
-            securityProblems: [{}],
-          },
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', { securityProblems: [{}] }]]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -209,12 +180,7 @@ describe('SecurityApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listSecurityProblems(undefined, 'testAlias');
@@ -225,15 +191,15 @@ describe('SecurityApiClient', () => {
     });
 
     it('should handle empty list', () => {
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 0,
             securityProblems: [],
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
       expect(result).toContain('Listing 0 security vulnerabilities');
@@ -242,12 +208,12 @@ describe('SecurityApiClient', () => {
 
   describe('formatProblemDetails', () => {
     it('should format details', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getSecurityProblemDetails.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          JSON.parse(readFileSync('src/capabilities/__tests__/resources/getSecurityProblemDetails.json', 'utf8')),
+        ],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getSecurityProblemDetails('my-id', 'testAlias');
@@ -259,12 +225,7 @@ describe('SecurityApiClient', () => {
     });
 
     it('should format details when sparse problem', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getSecurityProblemDetails('my-id', 'testAlias');

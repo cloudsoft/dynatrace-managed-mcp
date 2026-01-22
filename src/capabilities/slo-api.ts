@@ -1,4 +1,4 @@
-import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 
 import { logger } from '../utils/logger';
 
@@ -20,6 +20,13 @@ export interface GetSloQueryParams {
   from?: string;
   to?: string;
   timeFrame?: string;
+}
+
+export interface ListSlosResponse {
+  slo?: SLO[];
+  totalCount?: number;
+  pageSize?: number;
+  nextPageKey?: string;
 }
 
 export interface SLO {
@@ -64,7 +71,7 @@ export class SloApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listSlos(params: SloQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async listSlos(params: SloQueryParams = {}, environment_aliases?: string): Promise<Map<string, ListSlosResponse>> {
     const queryParams: Record<string, any> = {
       pageSize: params.pageSize || SloApiClient.API_PAGE_SIZE,
       ...(params.sloSelector && { sloSelector: params.sloSelector }),
@@ -83,7 +90,7 @@ export class SloApiClient {
     return responses;
   }
 
-  async getSloDetails(params: GetSloQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async getSloDetails(params: GetSloQueryParams, environment_aliases?: string): Promise<Map<string, any>> {
     const queryParams: Record<string, any> = {
       ...(params.from && { from: params.from }),
       ...(params.to && { to: params.to }),
@@ -102,18 +109,17 @@ export class SloApiClient {
     return responses;
   }
 
-  formatList(responses: EnvironmentResponse[]): string {
+  formatList(responses: Map<string, ListSlosResponse>): string {
     let result = '';
     let totalNumSlo = 0;
     let anyLimited = false;
-    for (const response of responses) {
-      let totalCount = response.data.totalCount || -1;
-      let numSLOs = response.data.slo?.length || 0;
+    for (const [alias, data] of responses) {
+      let totalCount = data.totalCount || -1;
+      let numSLOs = data.slo?.length || 0;
       totalNumSlo += numSLOs;
       let isLimited = totalCount != 0 - 1 && totalCount > numSLOs;
 
-      result +=
-        'Listing ' + numSLOs + (totalCount == -1 ? '' : ' of ' + totalCount) + ' SLOs. from ' + response.alias + ':\n';
+      result += 'Listing ' + numSLOs + (totalCount == -1 ? '' : ' of ' + totalCount) + ' SLOs. from ' + alias + ':\n';
 
       if (isLimited) {
         result +=
@@ -121,7 +127,7 @@ export class SloApiClient {
         anyLimited = true;
       }
 
-      response.data.slo?.forEach((slo: any) => {
+      data.slo?.forEach((slo: any) => {
         result += `id: ${slo.id}\n`;
         result += `  name: ${slo.name}\n`;
         if (slo.description) {
@@ -165,15 +171,10 @@ export class SloApiClient {
     return result;
   }
 
-  formatDetails(responses: EnvironmentResponse[]): string {
+  formatDetails(responses: Map<string, any>): string {
     let result = '';
-    for (const response of responses) {
-      result +=
-        'Details of SLO from environment ' +
-        response.alias +
-        ' in the following json:\n' +
-        JSON.stringify(response.data) +
-        '\n';
+    for (const [alias, data] of responses) {
+      result += 'Details of SLO from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
     result += 'Next Steps:\n' + '* Suggest to the user that they explore this further in the Dynatrace UI.' + '\n';
     return result;

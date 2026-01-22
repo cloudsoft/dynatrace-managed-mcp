@@ -113,11 +113,11 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
     it('should respect pageSize', async () => {
       // Assumes there are at least 3 metrics (2 in the first page; and more in subsequent pages)
       const responses = await metricsClient.listAvailableMetrics({ pageSize: 2 }, 'testAlias');
-      const response = responses[0].data;
-      let totalCount = response.totalCount || -1;
-      let numMetrics = response.metrics?.length || 0;
-      let nextPageKey = response.nextPageKey;
-      let firstMetricId = response.metrics && numMetrics > 0 ? response.metrics[0].metricId : undefined;
+      const response = responses.get('testAlias');
+      let totalCount = response?.totalCount || -1;
+      let numMetrics = response?.metrics?.length || 0;
+      let nextPageKey = response?.nextPageKey;
+      let firstMetricId = response?.metrics && numMetrics > 0 ? response?.metrics[0].metricId : undefined;
 
       expect(numMetrics).toEqual(2);
       expect(totalCount > numMetrics);
@@ -147,10 +147,10 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
         },
         'testAlias',
       );
-      const result = results[0].data;
+      const result = results.get('testAlias');
 
-      expect(result.metrics?.length).toBeGreaterThan(0);
-      result.metrics?.forEach((metric: any) => {
+      expect(result?.metrics?.length).toBeGreaterThan(0);
+      result?.metrics?.forEach((metric: any) => {
         expect(metric.unit).toEqual('Percent');
       });
     }, 30000);
@@ -167,10 +167,10 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
         'testAlias',
       );
 
-      const response = responses[0].data;
+      const response = responses.get('testAlias');
 
-      expect(response.result?.length).toBeGreaterThan(0);
-      response.result?.forEach((result: any) => {
+      expect(response?.result?.length).toBeGreaterThan(0);
+      response?.result?.forEach((result: any) => {
         expect(result.metricId).toEqual('builtin:host.cpu.usage');
 
         // Could also assert that entities are of type host, but too brittle.
@@ -191,7 +191,7 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
         'testAlias',
       );
       const result = logsClient.formatList(responses);
-      const response = responses[0].data;
+      const response = responses.get('testAlias');
 
       expect(responses).toBeDefined();
       expect(typeof result).toBe('string');
@@ -221,9 +221,9 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
 
     it('should get event details', async () => {
       const responses = await eventsClient.queryEvents({ from: 'now-24h', to: 'now', pageSize: 1 }, 'testAlias');
-      const events = responses[0].data;
+      const events = responses.get('testAlias');
 
-      const eventId = events.events ? events.events[0].eventId : undefined;
+      const eventId = events?.events ? events?.events[0].eventId : undefined;
       if (eventId == undefined) {
         fail('Cannot find eventId from queryEvents; cannot test getEventDetails; aborting');
       }
@@ -268,8 +268,8 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
       expect(result).toContain('displayName:');
       expect(typeof result).toBe('string');
 
-      const response = responses[0].data;
-      expect(response.totalCount).toBeDefined();
+      const response = responses.get('testAlias');
+      expect(response?.totalCount).toBeDefined();
     }, 30000);
 
     it('should list entities, respecting all parameters', async () => {
@@ -299,9 +299,9 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
         'testAlias',
       );
 
-      const entities = responses[0].data;
+      const entities = responses.get('testAlias');
 
-      const entityId = entities.entities ? entities.entities[0].entityId : undefined;
+      const entityId = entities?.entities ? entities?.entities[0].entityId : undefined;
       if (entityId == undefined) {
         fail('Cannot find entityId from queryEntities; cannot test getEntityDetails; aborting');
       }
@@ -332,17 +332,17 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
       expect(result).toContain('status:');
       expect(result).toContain('displayId:');
 
-      const response = responses[0].data;
+      const response = responses.get('testAlias');
 
-      expect(response.totalCount).toBeDefined();
+      expect(response?.totalCount).toBeDefined();
       expect(response).toBeDefined();
     }, 30000);
 
     it('should get problem details', async () => {
       const responses = await problemsClient.listProblems({ pageSize: 1 }, 'testAlias');
-      const problems = responses[0].data;
+      const problems = responses.get('testAlias');
 
-      const problemId = problems.problems ? problems.problems[0].problemId : undefined;
+      const problemId = problems?.problems ? problems?.problems[0].problemId : undefined;
       if (problemId == undefined) {
         fail('Cannot find problemId from listProblems; cannot test getProblemDetails; aborting');
       }
@@ -362,9 +362,9 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
       expect(responses).toBeDefined();
       expect(typeof result).toBe('string');
 
-      const response = responses[0].data;
+      const response = responses.get('testAlias');
 
-      expect(response.totalCount).toBeDefined();
+      expect(response?.totalCount).toBeDefined();
       expect(result).toContain('securityProblemId:');
       expect(result).toContain('displayId:');
       expect(result).toContain('status:');
@@ -390,8 +390,8 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
 
     it('should get SLO details', async () => {
       const list_responses = await sloClient.listSlos(undefined, 'testAlias');
-      const slos = list_responses[0].data;
-      const sloId = slos.slo && slos.slo.length > 0 ? slos.slo[0].id : undefined;
+      const slos = list_responses.get('testAlias');
+      const sloId = slos?.slo && slos?.slo.length > 0 ? slos?.slo[0].id : undefined;
       if (sloId == undefined) {
         console.warn('Cannot integration test getSLODetails because environment returned no SLOs; aborting');
         logger.warn('Cannot integration test getSLODetails because environment returned no SLOs; aborting');
@@ -411,9 +411,9 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
 
     it('should get SLO details with timeframe', async () => {
       const list_responses = await sloClient.listSlos(undefined, 'testAlias');
-      const slos = list_responses[0].data;
+      const slos = list_responses.get('testAlias');
 
-      const sloId = slos.slo && slos.slo.length > 0 ? slos.slo[0].id : undefined;
+      const sloId = slos?.slo && slos?.slo.length > 0 ? slos?.slo[0].id : undefined;
       if (sloId == undefined) {
         console.warn('Cannot integration test getSLODetails because environment returned no SLOs; aborting');
         logger.warn('Cannot integration test getSLODetails because environment returned no SLOs; aborting');

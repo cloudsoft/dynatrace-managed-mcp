@@ -1,4 +1,4 @@
-import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
 
@@ -73,7 +73,10 @@ export class ProblemsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listProblems(params: ProblemQueryParams = {}, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async listProblems(
+    params: ProblemQueryParams = {},
+    environment_aliases?: string,
+  ): Promise<Map<string, ListProblemResponse>> {
     const queryParams = {
       pageSize: params.pageSize || ProblemsApiClient.API_PAGE_SIZE,
       ...(params.from && { from: params.from }),
@@ -90,7 +93,7 @@ export class ProblemsApiClient {
     return responses;
   }
 
-  async getProblemDetails(problemId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async getProblemDetails(problemId: string, environment_aliases?: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/problems/${encodeURIComponent(problemId)}`,
       undefined,
@@ -101,23 +104,18 @@ export class ProblemsApiClient {
     return responses;
   }
 
-  formatList(responses: EnvironmentResponse[]): string {
+  formatList(responses: Map<string, ListProblemResponse>): string {
     let result = '';
     let totalNumProblems = 0;
     let anyLimited = false;
-    for (const response of responses) {
-      let totalCount = response.data.totalCount || -1;
-      let numProblems = response.data.problems?.length || 0;
+    for (const [alias, data] of responses) {
+      let totalCount = data.totalCount || -1;
+      let numProblems = data.problems?.length || 0;
       totalNumProblems += numProblems;
       let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
 
       result +=
-        'Listing ' +
-        numProblems +
-        (totalCount == -1 ? '' : ' of ' + totalCount) +
-        ' problems from ' +
-        response.alias +
-        '.\n\n';
+        'Listing ' + numProblems + (totalCount == -1 ? '' : ' of ' + totalCount) + ' problems from ' + alias + '.\n\n';
 
       if (isLimited) {
         result +=
@@ -125,7 +123,7 @@ export class ProblemsApiClient {
         anyLimited = true;
       }
 
-      response.data.problems?.forEach((problem: any) => {
+      data.problems?.forEach((problem: any) => {
         result += `problemId: ${problem.problemId}\n`;
         result += `  displayId: ${problem.displayId}\n`;
         result += `  title: ${problem.title}\n`;
@@ -159,15 +157,11 @@ export class ProblemsApiClient {
     return result;
   }
 
-  formatDetails(responses: EnvironmentResponse[]): string {
+  formatDetails(responses: Map<string, any>): string {
     let result = '';
-    for (const response of responses) {
+    for (const [alias, data] of responses) {
       result +=
-        'Details of problem from environment ' +
-        response.alias +
-        ' in the following json:\n' +
-        JSON.stringify(response.data) +
-        '\n';
+        'Details of problem from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
     result +=
       'Next Steps:\n' +

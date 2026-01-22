@@ -1,5 +1,5 @@
 import { LogsApiClient, LogEntry } from '../logs-api';
-import { EnvironmentResponse, ManagedAuthClientManager } from '../../authentication/managed-auth-client';
+import { ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
 
 jest.mock('../../authentication/managed-auth-client');
@@ -21,12 +21,7 @@ describe('LogsApiClient', () => {
 
   describe('queryLogs', () => {
     it('should query logs with all parameters', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.queryLogs(
@@ -55,12 +50,7 @@ describe('LogsApiClient', () => {
     });
 
     it('should use default values for optional parameters', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.queryLogs(
@@ -89,12 +79,9 @@ describe('LogsApiClient', () => {
 
   describe('formatList', () => {
     it('should format list', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryLogs.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryLogs.json', 'utf8'))],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
@@ -109,14 +96,15 @@ describe('LogsApiClient', () => {
     });
 
     it('should format list when sparse result', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: [{}],
           },
-        },
-      ];
+        ],
+      ]);
+
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
@@ -128,14 +116,14 @@ describe('LogsApiClient', () => {
     });
 
     it('should format list when sparse result data', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: [{ data: [{}] }],
           },
-        },
-      ];
+        ],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
@@ -147,12 +135,7 @@ describe('LogsApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
@@ -163,14 +146,15 @@ describe('LogsApiClient', () => {
     });
 
     it('should format empty logs list', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: [],
           },
-        },
-      ];
+        ],
+      ]);
+
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
@@ -191,14 +175,14 @@ describe('LogsApiClient', () => {
           service: [`service-${i % 5}`],
         },
       }));
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: mockLogs,
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
 
@@ -220,14 +204,14 @@ describe('LogsApiClient', () => {
           },
         },
       ];
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: mockLogs,
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
 
@@ -237,10 +221,10 @@ describe('LogsApiClient', () => {
     });
 
     it('should show that truncated when multiple pages', () => {
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: [
               {
                 timestamp: 1704110400000,
@@ -251,8 +235,8 @@ describe('LogsApiClient', () => {
             sliceSize: 1,
             nextSliceKey: 'my-next-slice-key',
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
 
@@ -260,10 +244,10 @@ describe('LogsApiClient', () => {
     });
 
     it('should not show LLM awareness hint when no second page', () => {
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             results: [
               {
                 timestamp: 1704110400000,
@@ -273,9 +257,8 @@ describe('LogsApiClient', () => {
             ],
             sliceSize: 1,
           },
-        },
-      ];
-
+        ],
+      ]);
       const result = client.formatList(response);
 
       expect(result).not.toContain('Results likely restricted');

@@ -1,4 +1,4 @@
-import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
@@ -9,6 +9,13 @@ export interface EventQueryParams {
   eventType?: string;
   entitySelector?: string;
   pageSize?: number;
+}
+
+export interface ListEventsResponse {
+  events?: Event[];
+  totalCount?: number;
+  pageSize?: number;
+  nextPageKey?: string;
 }
 
 export interface Event {
@@ -24,6 +31,12 @@ export interface Event {
   customProperties?: Record<string, any>;
 }
 
+export interface EventSearchResult {
+  events: Event[];
+  totalCount: number;
+  nextPageKey?: string;
+}
+
 export class EventsApiClient {
   static readonly API_PAGE_SIZE = 100;
   static readonly MAX_PROPERTIES_DISPLAY = 11;
@@ -31,7 +44,7 @@ export class EventsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryEvents(params: EventQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async queryEvents(params: EventQueryParams, environment_aliases?: string): Promise<Map<string, ListEventsResponse>> {
     const queryParams = {
       from: params.from,
       to: params.to,
@@ -45,7 +58,7 @@ export class EventsApiClient {
     return responses;
   }
 
-  async getEventDetails(eventId: string, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async getEventDetails(eventId: string, environment_aliases?: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/events/${encodeURIComponent(eventId)}`,
       undefined,
@@ -55,24 +68,19 @@ export class EventsApiClient {
     return responses;
   }
 
-  formatList(responses: EnvironmentResponse[]): string {
+  formatList(responses: Map<string, ListEventsResponse>): string {
     let result = '';
     let totalNumEvents = 0;
     let anyLimited = false;
 
-    for (const response of responses) {
-      let totalCount = response.data.totalCount || -1;
-      let numEvents = response.data.events?.length || 0;
+    for (const [alias, data] of responses) {
+      let totalCount = data.totalCount || -1;
+      let numEvents = data.events?.length || 0;
       totalNumEvents += numEvents;
       let isLimited = totalCount != 0 - 1 && totalCount > numEvents;
 
       result +=
-        'Listing ' +
-        numEvents +
-        (totalCount == -1 ? '' : ' of ' + totalCount) +
-        ' events from ' +
-        response.alias +
-        '.\n\n';
+        'Listing ' + numEvents + (totalCount == -1 ? '' : ' of ' + totalCount) + ' events from ' + alias + '.\n\n';
 
       if (isLimited) {
         result +=
@@ -80,7 +88,7 @@ export class EventsApiClient {
         anyLimited = true;
       }
 
-      response.data.events?.forEach((event: any) => {
+      data.events?.forEach((event: any) => {
         result += `eventId: ${event.eventId}\n`;
         result += `  eventType: ${event.eventType}\n`;
         result += `  status: ${event.status}\n`;
@@ -137,15 +145,10 @@ export class EventsApiClient {
     return result;
   }
 
-  formatDetails(responses: EnvironmentResponse[]): string {
+  formatDetails(responses: Map<string, any>): string {
     let result = '';
-    for (const response of responses) {
-      result +=
-        'Event details from environment ' +
-        response.alias +
-        ' in the following json:\n' +
-        JSON.stringify(response.data) +
-        '\n';
+    for (const [alias, data] of responses) {
+      result += 'Event details from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
     result +=
       'Next Steps:\n' +

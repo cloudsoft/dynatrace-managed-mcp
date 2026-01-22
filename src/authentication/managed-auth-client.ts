@@ -27,11 +27,6 @@ export interface ManagedAuthClientParams {
   isValid?: boolean;
 }
 
-export interface EnvironmentResponse {
-  alias: string;
-  data: any;
-}
-
 export class ManagedAuthClientManager {
   public readonly rawClients: ManagedAuthClient[];
   public clients: ManagedAuthClient[];
@@ -56,23 +51,22 @@ export class ManagedAuthClientManager {
     }
   }
 
-  async makeRequests(
-    endpoint: string,
-    params?: Record<string, any>,
-    environments?: string,
-  ): Promise<EnvironmentResponse[]> {
+  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<any> {
     let responses = [];
     const selectedAliases = environments ? environments.split(';') : this.validAliases;
-
+    let myMap = new Map<string, any>();
     for (const client of this.clients) {
       if (selectedAliases.indexOf(client.alias) > -1) {
         responses.push({
           alias: client.alias,
           data: await client.makeRequest(endpoint, params),
         });
+
+        const r = await client.makeRequest(endpoint, params);
+        myMap.set(client.alias, r);
       }
     }
-    return responses;
+    return myMap;
   }
 
   async isConfigured(): Promise<void> {

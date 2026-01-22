@@ -1147,5 +1147,6 @@ main().catch(async (error) => {
   } catch (e: any) {
     logger.error(`Failed to track fatal error: ${e.message}`, { error: e });
   }
+  logger.end();
   process.exit(1);
 });

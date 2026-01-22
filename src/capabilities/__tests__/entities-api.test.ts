@@ -1,5 +1,5 @@
 import { EntitiesApiClient, Entity, GetEntityRelationshipsResponse } from '../entities-api';
-import { EnvironmentResponse, ManagedAuthClientManager } from '../../authentication/managed-auth-client';
+import { ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
 
 jest.mock('../../authentication/managed-auth-client');
@@ -21,12 +21,7 @@ describe('EntitiesApiClient', () => {
 
   describe('getEntityDetails', () => {
     it('should get entity details by ID', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
       const result = await client.getEntityDetails('SERVICE-123', 'testAlias');
 
@@ -37,10 +32,10 @@ describe('EntitiesApiClient', () => {
 
   describe('getEntityRelationships', () => {
     it('should get entity relationships', async () => {
-      const mockEntity: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockEntity = new Map<string, any>([
+        [
+          'testAlias',
+          {
             entityId: 'SERVICE-123',
             displayName: 'payment-service',
             entityType: 'SERVICE',
@@ -61,8 +56,8 @@ describe('EntitiesApiClient', () => {
               },
             ],
           },
-        },
-      ];
+        ],
+      ]);
       const expectedResponse: GetEntityRelationshipsResponse = {
         entityId: 'SERVICE-123',
         fromRelationships: [
@@ -84,19 +79,16 @@ describe('EntitiesApiClient', () => {
       };
 
       mockAuthManager.makeRequests.mockResolvedValue(mockEntity);
-      const result = await client.getEntityRelationships('SERVICE-123');
-      expect(result[0].data).toEqual(expectedResponse);
+      const result = await client.getEntityRelationships('SERVICE-123', 'testAlias');
+      expect(result.get('testAlias')).toEqual(expectedResponse);
     });
   });
 
   describe('formatEntityDetails', () => {
     it('should format details', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEntityDetails.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEntityDetails.json', 'utf8'))],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getEntityDetails('my-id', 'testAlias');
@@ -108,12 +100,7 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format details when sparse problem', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getEntityDetails('my-id', 'testAlias');
@@ -121,19 +108,15 @@ describe('EntitiesApiClient', () => {
 
       expect(response).toEqual(mockResponse);
       expect(result).toContain('Entity details from environment testAlias in the following json');
-      expect(response[0].data).toEqual({});
+      expect(response.get('testAlias')).toEqual({});
     });
   });
 
   describe('formatEntityTypes', () => {
     it('should format list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/listEntityTypes.json', 'utf8')),
-        },
-      ];
-
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/listEntityTypes.json', 'utf8'))],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
@@ -144,14 +127,15 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format list when sparse', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             types: [{}],
           },
-        },
-      ];
+        ],
+      ]);
+
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
@@ -162,12 +146,7 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
@@ -178,15 +157,16 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should handle empty list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 0,
             types: [],
           },
-        },
-      ];
+        ],
+      ]);
+
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.listEntityTypes();
@@ -197,12 +177,12 @@ describe('EntitiesApiClient', () => {
 
   describe('formatEntityTypeDetails', () => {
     it('should format details', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEntityTypeDetails.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEntityTypeDetails.json', 'utf8')),
+        ],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -215,12 +195,7 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should format list when sparse', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getEntityTypeDetails('SERVICE');
@@ -233,12 +208,9 @@ describe('EntitiesApiClient', () => {
 
   describe('formatEntityList', () => {
     it('should format list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryEntities.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryEntities.json', 'utf8'))],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -260,15 +232,16 @@ describe('EntitiesApiClient', () => {
         entityType: 'SERVICE',
         tags: [{ context: 'CONTEXTLESS', key: 'environment', value: 'production' }],
       }));
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 100,
             entities: mockEntities,
           },
-        },
-      ];
+        ],
+      ]);
+
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryEntities({ entitySelector: 'type(SERVICE)' });
@@ -281,15 +254,15 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should handle empty entities list', async () => {
-      const mockResponse = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 0,
             entities: [],
           },
-        },
-      ];
+        ],
+      ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryEntities({ entitySelector: 'type(SERVICE)' });
@@ -298,12 +271,7 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should handle entities list that is empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryEntities({ entitySelector: 'type(SERVICE)' });
@@ -314,10 +282,10 @@ describe('EntitiesApiClient', () => {
 
   describe('formatEntityRelationships', () => {
     it('should format entity relationships', async () => {
-      const mockEntity: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockEntity = new Map<string, any>([
+        [
+          'testAlias',
+          {
             entityId: 'SERVICE-123',
             displayName: 'payment-service',
             entityType: 'SERVICE',
@@ -338,8 +306,8 @@ describe('EntitiesApiClient', () => {
               },
             ],
           },
-        },
-      ];
+        ],
+      ]);
 
       const expectedResponse: GetEntityRelationshipsResponse = {
         entityId: 'SERVICE-123',
@@ -363,10 +331,10 @@ describe('EntitiesApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockEntity);
 
-      const response = await client.getEntityRelationships('SERVICE-123');
+      const response = await client.getEntityRelationships('SERVICE-123', 'testAlias');
       const result = client.formatEntityRelationships(response);
 
-      expect(response[0].data).toEqual(expectedResponse);
+      expect(response.get('testAlias')).toEqual(expectedResponse);
       expect(result).toContain('Found 1 fromRelationship');
       expect(result).toContain('"id":"rel-1"');
       expect(result).toContain('Found 1 toRelationship');
@@ -374,16 +342,17 @@ describe('EntitiesApiClient', () => {
     });
 
     it('should return empty array when no relationships exist', async () => {
-      const mockEntity: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockEntity = new Map<string, any>([
+        [
+          'testAlias',
+          {
             entityId: 'SERVICE-123',
             displayName: 'isolated-service',
             entityType: 'SERVICE',
           },
-        },
-      ];
+        ],
+      ]);
+
       const expectedResponse: GetEntityRelationshipsResponse = {
         entityId: 'SERVICE-123',
         fromRelationships: undefined,
@@ -392,26 +361,26 @@ describe('EntitiesApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockEntity);
 
-      const response = await client.getEntityRelationships('SERVICE-123');
+      const response = await client.getEntityRelationships('SERVICE-123', 'testAlias');
       const result = client.formatEntityRelationships(response);
 
-      expect(response[0].data).toEqual(expectedResponse);
+      expect(response.get('testAlias')).toEqual(expectedResponse);
       expect(result).toContain('No relationships found for entity SERVICE-123');
     });
 
     it('should handle null relationships without error', async () => {
-      const mockEntity: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockEntity = new Map<string, any>([
+        [
+          'testAlias',
+          {
             entityId: 'SERVICE-123',
             displayName: 'service-with-undefined-relationships',
             entityType: 'SERVICE',
             fromRelationships: null,
             toRelationships: null,
           },
-        },
-      ];
+        ],
+      ]);
       const expectedResponse = {
         entityId: 'SERVICE-123',
         fromRelationships: null,
@@ -420,26 +389,27 @@ describe('EntitiesApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockEntity);
 
-      const response = await client.getEntityRelationships('SERVICE-123');
+      const response = await client.getEntityRelationships('SERVICE-123', 'testAlias');
       const result = client.formatEntityRelationships(response);
 
-      expect(response[0].data).toEqual(expectedResponse);
+      expect(response.get('testAlias')).toEqual(expectedResponse);
       expect(result).toContain('No relationships found for entity SERVICE-123');
     });
 
     it('should handle non-array relationships without error', async () => {
-      const mockEntity: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockEntity = new Map<string, any>([
+        [
+          'testAlias',
+          {
             entityId: 'SERVICE-123',
             displayName: 'service-with-invalid-relationships',
             entityType: 'SERVICE',
             fromRelationships: 'not-an-array',
             toRelationships: { unexpectedKey: 'unexpected-val' },
           },
-        },
-      ];
+        ],
+      ]);
+
       const expectedResponse = {
         entityId: 'SERVICE-123',
         fromRelationships: 'not-an-array',
@@ -449,10 +419,10 @@ describe('EntitiesApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockEntity);
 
-      const response = await client.getEntityRelationships('SERVICE-123');
+      const response = await client.getEntityRelationships('SERVICE-123', 'testAlias');
       const result = client.formatEntityRelationships(response);
 
-      expect(response[0].data).toEqual(expectedResponse);
+      expect(response.get('testAlias')).toEqual(expectedResponse);
       expect(result).toContain('Found 1 fromRelationship');
       expect(result).toContain('not-an-array');
       expect(result).toContain('Found 1 toRelationship');
@@ -462,12 +432,7 @@ describe('EntitiesApiClient', () => {
 
   describe('queryEntities', () => {
     it('should query entities by entitySelector', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.queryEntities(

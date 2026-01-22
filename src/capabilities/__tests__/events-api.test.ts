@@ -1,5 +1,5 @@
 import { EventsApiClient, Event } from '../events-api';
-import { EnvironmentResponse, ManagedAuthClientManager } from '../../authentication/managed-auth-client';
+import { ManagedAuthClientManager } from '../../authentication/managed-auth-client';
 import { readFileSync } from 'fs';
 
 jest.mock('../../authentication/managed-auth-client');
@@ -21,12 +21,7 @@ describe('EventsApiClient', () => {
 
   describe('queryEvents', () => {
     it('should query events with all parameters', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.queryEvents(
@@ -55,12 +50,7 @@ describe('EventsApiClient', () => {
     });
 
     it('should use defaults when not specified', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       await client.queryEvents(
@@ -85,12 +75,7 @@ describe('EventsApiClient', () => {
 
   describe('getEventDetails', () => {
     it('should get event details by ID', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const result = await client.getEventDetails('event-123', 'testAlias');
@@ -102,12 +87,9 @@ describe('EventsApiClient', () => {
 
   describe('formatList', () => {
     it('should format list', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryEvents.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/queryEvents.json', 'utf8'))],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -134,15 +116,15 @@ describe('EventsApiClient', () => {
         entityName: `service-${i}`,
       }));
 
-      const response: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const response = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 100,
             events: mockEvents,
           },
-        },
-      ];
+        ],
+      ]);
 
       const result = client.formatList(response);
 
@@ -153,14 +135,14 @@ describe('EventsApiClient', () => {
     });
 
     it('should format list when sparse problem', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             events: [{}],
           },
-        },
-      ];
+        ],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -178,12 +160,7 @@ describe('EventsApiClient', () => {
     });
 
     it('should format list when empty', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.queryEvents({ from: 'now-1h', to: 'now' }, 'testAlias');
@@ -194,15 +171,15 @@ describe('EventsApiClient', () => {
     });
 
     it('should handle empty list', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {
+      const mockResponse = new Map<string, any>([
+        [
+          'testAlias',
+          {
             totalCount: 0,
             events: [],
           },
-        },
-      ];
+        ],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -215,12 +192,9 @@ describe('EventsApiClient', () => {
 
   describe('formatDetails', () => {
     it('should format details', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEventDetails.json', 'utf8')),
-        },
-      ];
+      const mockResponse = new Map<string, any>([
+        ['testAlias', JSON.parse(readFileSync('src/capabilities/__tests__/resources/getEventDetails.json', 'utf8'))],
+      ]);
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
@@ -233,12 +207,7 @@ describe('EventsApiClient', () => {
     });
 
     it('should format details when sparse problem', async () => {
-      const mockResponse: EnvironmentResponse[] = [
-        {
-          alias: 'testAlias',
-          data: {},
-        },
-      ];
+      const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
       const response = await client.getEventDetails('my-id', 'testAlias');

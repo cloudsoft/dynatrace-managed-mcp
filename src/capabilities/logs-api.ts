@@ -1,4 +1,4 @@
-import { EnvironmentResponse, ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
+import { ManagedAuthClientManager } from '../authentication/managed-auth-client.js';
 import { formatTimestamp } from '../utils/date-formatter';
 import { logger } from '../utils/logger';
 
@@ -8,7 +8,12 @@ export interface LogQueryParams {
   to: string;
   limit?: number;
   sort?: string;
-  environment_aliases?: '';
+}
+
+export interface ListLogsResponse {
+  results?: LogEntry[];
+  sliceSize?: number;
+  nextSliceKey?: string;
 }
 
 export interface LogEntry {
@@ -23,12 +28,19 @@ export interface LogEntry {
   [key: string]: any;
 }
 
+export interface LogSearchResult {
+  results: LogEntry[];
+  totalCount: number;
+  nextPageKey?: string;
+  sliceSize?: number;
+}
+
 export class LogsApiClient {
   private static readonly API_PAGE_SIZE = 1000;
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryLogs(params: LogQueryParams, environment_aliases?: string): Promise<EnvironmentResponse[]> {
+  async queryLogs(params: LogQueryParams, environment_aliases?: string): Promise<Map<string, ListLogsResponse>> {
     const queryParams = {
       query: params.query || '',
       from: params.from,
@@ -42,23 +54,23 @@ export class LogsApiClient {
     return responses;
   }
 
-  formatList(responses: EnvironmentResponse[]): string {
+  formatList(responses: Map<string, ListLogsResponse>): string {
     let result = '';
     let totalNumLogs = 0;
     let anyLimited = false;
-    for (const response of responses) {
-      let numLogs = response.data.results?.length || 0;
+    for (const [alias, data] of responses) {
+      let numLogs = data.results?.length || 0;
       totalNumLogs = totalNumLogs + numLogs;
-      let isLimited = response.data.nextSliceKey != undefined;
+      let isLimited = data.nextSliceKey != undefined;
 
-      result += 'Listing ' + numLogs + ' log records from ' + response.alias + '.\n\n';
+      result += 'Listing ' + numLogs + ' log records from ' + alias + '.\n\n';
 
       if (isLimited) {
         result += 'Results likely restricted due to maximum response size, consider using a more specific filter.';
         anyLimited = true;
       }
 
-      response.data.results?.forEach((log: any) => {
+      data.results?.forEach((log: any) => {
         const timestamp = formatTimestamp(log.timestamp);
         // Enhanced level detection for better error identification
         let level = log.additionalColumns?.loglevel?.[0] || log.status || log.log_level || 'NONE';
