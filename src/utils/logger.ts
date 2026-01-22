@@ -9,3 +9,8 @@ export const logger = winston.createLogger({
   ),
   transports: [new winston.transports.File({ filename: 'dynatrace-managed-mcp.log' })],
 });
+
+export async function flushLogger() {
+  logger.end();
+  await new Promise((resolve) => logger.once('finish', resolve));
+}

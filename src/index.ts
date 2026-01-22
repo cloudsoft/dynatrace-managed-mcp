@@ -20,7 +20,7 @@ import { SecurityApiClient } from './capabilities/security-api';
 import { SloApiClient } from './capabilities/slo-api';
 
 // Import logger after environment is loaded
-import { logger } from './utils/logger';
+import { logger, flushLogger } from './utils/logger';
 import { transport } from 'winston';
 
 logger.info('Starting Dynatrace Managed MCP');
@@ -59,6 +59,7 @@ const main = async () => {
   if (initConfigs.length === 0) {
     logger.error('No valid environments found, stopping.');
     console.error('No valid environments found, stopping.');
+    await flushLogger();
     process.exit(1);
   }
 
@@ -85,6 +86,7 @@ const main = async () => {
       for (const op of shutdownOps) {
         await op();
       }
+      await flushLogger();
       process.exit(0);
     };
   };
@@ -1147,5 +1149,6 @@ main().catch(async (error) => {
   } catch (e: any) {
     logger.error(`Failed to track fatal error: ${e.message}`, { error: e });
   }
+  await flushLogger();
   process.exit(1);
 });
