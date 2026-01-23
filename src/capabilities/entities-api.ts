@@ -144,7 +144,12 @@ export class EntitiesApiClient {
       let isLimited = totalCount != 0 - 1 && totalCount > numEntities;
 
       result +=
-        'Listing ' + numEntities + (totalCount == -1 ? '' : ' of ' + totalCount) + ' entities from ' + alias + '.\n';
+        'Listing ' +
+        numEntities +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' entities from environment ' +
+        alias +
+        '.\n';
       if (isLimited) {
         result +=
           'Not showing all matching entities. Consider using more specific filters (entitySelector) to get complete results.\n';

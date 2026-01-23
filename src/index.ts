@@ -111,7 +111,7 @@ Be careful of which MCP to use. If it is unclear, ask the user which they want t
 **Key Context:**
 - This server accesses self-hosted Dynatrace Managed clusters (not the SaaS environment)
 - Designed for historical data analysis before migration to SaaS
-- Minimum supported cluster version: ...
+- Minimum supported cluster version: ${authClientManager.MINIMUM_VERSION}
 - Two different ways that Dynatrace Managed may be being used:
    1. Dynatrace Managed may be the primary Observability system, containing all live data.
    2. Or alternatively the customer may have migrated to Dynatrace SaaS, leavng historical observability data in Dynatrace Managed from before the migration, in which case this MCP Server would only be used to access historical data.
@@ -129,7 +129,7 @@ Be careful of which MCP to use. If it is unclear, ask the user which they want t
 - Use specific time ranges (1-2 hours) rather than large historical queries for better performance
 - Leverage entity selectors to filter data at the source - they are fundamental to getting good results
 - Use problem IDs (UUID format) from list_problems, not display IDs (P-XXXXX)
-- Start with get_environments_info to understand connection errors, cluster capabilities and data range. **CRITICAL: Breakdown connection issues to the user before any other request**.
+- Start with calling the tool get_environments_info. This will list all the available environments. It will include details of connection errors and configuration errors. **CRITICAL: report the connection issues to the user before any other requests**.
 - On every request, an "environment_alias" must be passed.
 - If the user wants information of all available environments, "environment_alias" MUST be "ALL_ENVIRONMENTS"
 - **When users specify counts** (e.g., "first 25 errors", "50 metrics", "100 errors"), always use the "limit" parameter in tools rather than guessing with searchText
@@ -379,7 +379,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -433,7 +435,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -464,7 +468,9 @@ Never run queries that could return very large amounts of data, or that could be
       metricId: z.string().describe('The metric ID to get details for'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -494,7 +500,9 @@ Never run queries that could return very large amounts of data, or that could be
       sort: z.string().optional().describe('Sort order for logs. Use "-timestamp" for most recent first.'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -548,7 +556,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -579,7 +589,9 @@ Never run queries that could return very large amounts of data, or that could be
       eventId: z.string().describe('The event ID to get details for'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -599,7 +611,9 @@ Never run queries that could return very large amounts of data, or that could be
     {
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -620,7 +634,9 @@ Never run queries that could return very large amounts of data, or that could be
       type: z.string().describe('Name of the entity type, such as SERVICE, APPLICATION, HOST, etc'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -674,7 +690,9 @@ Never run queries that could return very large amounts of data, or that could be
         .describe('Sort order for entities. Use "name" for ascending, "-name" for descending by display name.'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -705,7 +723,9 @@ Never run queries that could return very large amounts of data, or that could be
       entityId: z.string().describe('The entity ID to get details for'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -726,7 +746,9 @@ Never run queries that could return very large amounts of data, or that could be
       entityId: z.string().describe('The entity ID to get relationships for'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -776,7 +798,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -811,7 +835,9 @@ Never run queries that could return very large amounts of data, or that could be
         .describe('The internal problem ID (UUID format) from list_problems - NOT the displayId (P-XXXXX)'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -853,7 +879,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -888,7 +916,9 @@ Never run queries that could return very large amounts of data, or that could be
         .describe('The security problem ID (UUID format) from list_security_problems - NOT the displayId (S-XXXXX)'),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -950,7 +980,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),
@@ -1008,7 +1040,9 @@ Never run queries that could return very large amounts of data, or that could be
         ),
       environment_alias: z
         .string()
-        .describe('Specifically hits one environment. Blank for all.')
+        .describe(
+          'Specifically hits one environment. Use `ALL_ENVIRONMENTS` to retrieve data from all environments in one request to MCP. ',
+        )
         .refine((alias) => envAliasValidate(alias), {
           message: 'Environment alias(es) not valid. Options are: ' + authClientManager.validAliases.join(', '),
         }),

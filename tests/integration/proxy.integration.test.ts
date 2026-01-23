@@ -55,6 +55,7 @@ describe('ProxyConfig', () => {
         apiToken: 'my-example-token',
         alias: 'alias',
         httpsProxy: proxyUrl,
+        minimum_version: '1.328.0',
       });
 
       const response = await client.makeRequest('/anything/mypath');

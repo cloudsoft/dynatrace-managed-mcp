@@ -25,12 +25,14 @@ export interface ManagedAuthClientParams {
   httpProxy?: string;
   httpsProxy?: string;
   isValid?: boolean;
+  minimum_version: string;
 }
 
 export class ManagedAuthClientManager {
   public readonly rawClients: ManagedAuthClient[];
   public clients: ManagedAuthClient[];
   public validAliases: string[] = [];
+  public readonly MINIMUM_VERSION = '1.328.0';
 
   constructor(managedEnvironments: ManagedEnvironmentConfig[]) {
     this.rawClients = [];
@@ -46,6 +48,7 @@ export class ManagedAuthClientManager {
         alias: managedEnvironment.alias,
         httpProxy: managedEnvironment.httpProxy,
         httpsProxy: managedEnvironment.httpsProxy,
+        minimum_version: this.MINIMUM_VERSION,
       });
       this.rawClients.push(newClient);
     }
@@ -83,7 +86,7 @@ export class ManagedAuthClient {
   public validationError: string;
   private proxy: AxiosProxyConfig | undefined;
   private httpClient: AxiosInstance;
-  public readonly MINIMUM_VERSION = '1.328.0';
+  public MINIMUM_VERSION: string;
 
   constructor(params: ManagedAuthClientParams) {
     this.apiBaseUrl = params.apiBaseUrl;
@@ -91,6 +94,7 @@ export class ManagedAuthClient {
     this.alias = params.alias;
     this.proxy = setAxiosProxy(params.httpProxy, params.httpsProxy);
     this.isValid = params.isValid ? params.isValid : false;
+    this.MINIMUM_VERSION = params.minimum_version;
     this.validationError = '';
 
     this.httpClient = axios.create({
@@ -176,7 +180,7 @@ export class ManagedAuthClient {
 
   async isConfigured() {
     // Test connection to Managed cluster
-    logger.info(`Testing connection to Dynatrace Managed cluster "${this.alias}": ${this.apiBaseUrl}...`);
+    logger.info(`Testing connection to Dynatrace Managed environment "${this.alias}": ${this.apiBaseUrl}...`);
     try {
       const isConnected = await this.validateConnection();
       if (!isConnected) {
@@ -191,7 +195,7 @@ export class ManagedAuthClient {
 
       const isValidVersion = this.validateMinimumVersion(clusterVersion);
       if (!isValidVersion) {
-        const invalidVersionMessage = `Cluster "${this.alias}" version ${clusterVersion.version} may not support all features. Minimum recommended version is ${this.MINIMUM_VERSION}`;
+        const invalidVersionMessage = `Environment "${this.alias}" version ${clusterVersion.version} may not support all features. Minimum recommended version is ${this.MINIMUM_VERSION}`;
         logger.info(invalidVersionMessage);
         this.validationError = invalidVersionMessage;
         return false;
@@ -199,13 +203,13 @@ export class ManagedAuthClient {
       return true;
     } catch (error: any) {
       logger.error(
-        `[CONNECTION ERROR] Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}.`,
+        `[CONNECTION ERROR] Failed to connect to Managed environment "${this.alias}": ${this.apiBaseUrl}: ${error.message}.`,
       );
       logger.error('Please verify:');
-      logger.error('1. DT_MANAGED_ENVIRONMENTS is correct');
+      logger.error('1. DT_ENVIRONMENT_CONFIGS is correct');
       logger.error(`2. API Token has required scopes: ${MANAGED_API_SCOPES.join(', ')}`);
-      logger.error('3. Network connectivity to the Managed cluster');
-      this.validationError = `Failed to connect to Managed cluster "${this.alias}": ${this.apiBaseUrl}: ${error.message}. Please verify connection details are correct.`;
+      logger.error('3. Network connectivity to the Managed environment');
+      this.validationError = `Failed to connect to Managed environment "${this.alias}": ${this.apiBaseUrl}: ${error.message}. Please verify connection details are correct.`;
       return false;
     }
   }

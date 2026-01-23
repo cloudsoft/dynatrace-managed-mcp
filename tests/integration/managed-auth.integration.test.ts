@@ -24,6 +24,7 @@ if (!process.env.DT_ENVIRONMENT_CONFIGS) {
       dashboardBaseUrl: valid_client.dashboardUrl,
       apiToken: valid_client.apiToken,
       alias: valid_client.alias,
+      minimum_version: '1.328.0',
     });
   });
 

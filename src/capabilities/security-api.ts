@@ -108,7 +108,7 @@ export class SecurityApiClient {
         'Listing ' +
         numProblems +
         (totalCount == -1 ? '' : ' of ' + totalCount) +
-        ' security vulnerabilities from ' +
+        ' security vulnerabilities from environment ' +
         alias +
         ' in the following json.\n';
 

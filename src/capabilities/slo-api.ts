@@ -119,7 +119,13 @@ export class SloApiClient {
       totalNumSlo += numSLOs;
       let isLimited = totalCount != 0 - 1 && totalCount > numSLOs;
 
-      result += 'Listing ' + numSLOs + (totalCount == -1 ? '' : ' of ' + totalCount) + ' SLOs. from ' + alias + ':\n';
+      result +=
+        'Listing ' +
+        numSLOs +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' SLOs from environment ' +
+        alias +
+        ':\n';
 
       if (isLimited) {
         result +=

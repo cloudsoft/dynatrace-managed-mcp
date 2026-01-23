@@ -72,11 +72,30 @@ where:
 This needs to be escaped and set as the `DT_ENVIRONMENT_CONFIGS` environment variable, e.g.:
 
 ```shell
-DT_ENVIRONMENT_CONFIGS="[{\"dynatraceUrl\":\"https://my-dashboard-endpoint.com/\",\"apiEndpointUrl\":\"https://my-api-endpoint.com/\",\"environmentId\":\"my-env-id-1\",\"alias\":\"alias-env\",\"apiToken\":\"my-api-token\"},{\"dynatraceUrl\":\"https://my-dashboard2-endpoint.com/\",\"apiEndpointUrl\":\"https://my-api2-endpoint.com/\",\"environmentId\":\"my-env-id-2\",\"alias\":\"alias-env-2\",\"apiToken\":\"my-api-token-2\"}]"
+DT_ENVIRONMENT_CONFIGS='[
+    {
+        "dynatraceUrl": "https://my-dashboard-endpoint.com/",
+        "apiEndpointUrl": "https://my-api-endpoint.com/",
+        "environmentId": "my-env-id-1",
+        "alias": "alias-env",
+        "apiToken": "my-api-token",
+        "httpProxyUrl": "http://proxy.company.com:8080"
+    },
+    {
+        "dynatraceUrl": "https://my-dashboard2-endpoint.com/",
+        "apiEndpointUrl": "https://my-api2-endpoint.com/",
+        "environmentId": "my-env-id-2",
+        "alias": "alias-env-2",
+        "apiToken": "my-api-token-2",
+        "httpProxyUrl": "http://proxy.company.com:8080"
+    }
+]'
 ```
 
 If you are using multiple environments, we strongly recommend you set up rules (see [Rules](#rule-file)) to steer your LLM to better
 understand each of your environments.
+
+Changes to environment configuration will need from an MCP server restart/reload. Changes won't be picked up until a fresh reload.
 
 Once configured, you can start using [example prompts](#Example-Prompts) like `Get all details of the Dynatrace entity 'my-service'`
 or `What problems has Dynatrace identified? Give details of the first problem.`.
@@ -354,7 +373,24 @@ The MCP server honors system proxy settings for corporate environments for each 
 Example configuration with proxy:
 
 ```bash
-export DT_ENVIRONMENT_CONFIGS="[{\"dynatraceUrl\":\"https://my-dashboard-endpoint.com/\",\"apiEndpointUrl\":\"https://my-api-endpoint.com/\",\"environmentId\":\"my-env-id-1\",\"alias\":\"alias-env\",\"apiToken\":\"my-api-token\",\"httpProxyUrl\":\"http://proxy.company.com:8080\"},{\"dynatraceUrl\":\"https://my-dashboard2-endpoint.com/\",\"apiEndpointUrl\":\"https://my-api2-endpoint.com/\",\"environmentId\":\"my-env-id-2\",\"alias\":\"alias-env-2\",\"apiToken\":\"my-api-token-2\",\"httpProxyUrl\":\"http://proxy.company.com:8080\"}]"
+export DT_ENVIRONMENT_CONFIGS='[
+    {
+        "dynatraceUrl": "https://my-dashboard-endpoint.com/",
+        "apiEndpointUrl": "https://my-api-endpoint.com/",
+        "environmentId": "my-env-id-1",
+        "alias": "alias-env",
+        "apiToken": "my-api-token",
+        "httpProxyUrl": "http://proxy.company.com:8080"
+    },
+    {
+        "dynatraceUrl": "https://my-dashboard2-endpoint.com/",
+        "apiEndpointUrl": "https://my-api2-endpoint.com/",
+        "environmentId": "my-env-id-2",
+        "alias": "alias-env-2",
+        "apiToken": "my-api-token-2",
+        "httpProxyUrl": "http://proxy.company.com:8080"
+    }
+]'
 ```
 
 Note that the `httpProxyUrl`/`httpsProxyUrl` variables exist on a per-environment basis, so you can configure one environment to use a proxy

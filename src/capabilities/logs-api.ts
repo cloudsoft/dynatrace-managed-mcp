@@ -56,7 +56,7 @@ export class LogsApiClient {
       totalNumLogs = totalNumLogs + numLogs;
       let isLimited = data.nextSliceKey != undefined;
 
-      result += 'Listing ' + numLogs + ' log records from ' + alias + '.\n\n';
+      result += 'Listing ' + numLogs + ' log records from environment ' + alias + '.\n\n';
 
       if (isLimited) {
         result += 'Results likely restricted due to maximum response size, consider using a more specific filter.';

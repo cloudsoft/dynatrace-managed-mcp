@@ -124,7 +124,12 @@ export class MetricsApiClient {
       let isLimited = totalCount != 0 - 1 && totalCount > numMetrics;
 
       result +=
-        'Listing ' + numMetrics + (totalCount == -1 ? '' : ' of ' + totalCount) + ' metrics from ' + alias + '.\n\n';
+        'Listing ' +
+        numMetrics +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' metrics from environment ' +
+        alias +
+        '.\n\n';
 
       if (isLimited) {
         result += 'Not showing all matching metrics. Consider using more specific filters to get complete results.\n';

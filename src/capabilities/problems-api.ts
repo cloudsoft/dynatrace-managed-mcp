@@ -115,7 +115,12 @@ export class ProblemsApiClient {
       let isLimited = totalCount != 0 - 1 && totalCount > numProblems;
 
       result +=
-        'Listing ' + numProblems + (totalCount == -1 ? '' : ' of ' + totalCount) + ' problems from ' + alias + '.\n\n';
+        'Listing ' +
+        numProblems +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' problems from environment ' +
+        alias +
+        '.\n\n';
 
       if (isLimited) {
         result +=

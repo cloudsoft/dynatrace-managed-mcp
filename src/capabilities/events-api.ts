@@ -74,7 +74,12 @@ export class EventsApiClient {
       let isLimited = totalCount != 0 - 1 && totalCount > numEvents;
 
       result +=
-        'Listing ' + numEvents + (totalCount == -1 ? '' : ' of ' + totalCount) + ' events from ' + alias + '.\n\n';
+        'Listing ' +
+        numEvents +
+        (totalCount == -1 ? '' : ' of ' + totalCount) +
+        ' events from environment ' +
+        alias +
+        '.\n\n';
 
       if (isLimited) {
         result +=
