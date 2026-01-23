@@ -108,7 +108,9 @@ export class ProblemsApiClient {
     let result = '';
     let totalNumProblems = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numProblems = data.problems?.length || 0;
       totalNumProblems += numProblems;
@@ -154,9 +156,13 @@ export class ProblemsApiClient {
         : '') +
       (anyLimited ? '* Use more restrictive filters, such as a more specific entitySelector.\n' : '') +
       (totalNumProblems > 1 ? '* Use sort (e.g. with "+status" for open problems first).\n' : '') +
-      '* Suggest to the user that they view the problems in the Dynatrace UI.' +
-      '\n' +
-      '* If the user is interested in a specific problem, use the get_problem_details tool. ' +
+      '* Suggest to the user that they view the problems in the Dynatrace UI';
+
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
+    result +=
+      (baseUrl ? ` at ${baseUrl}/ui/problems.` : '.') +
+      '\n* If the user is interested in a specific problem, use the get_problem_details tool. ' +
       'Use the problemId (UUID) for detailed analysis.\n';
 
     return result;
@@ -164,15 +170,21 @@ export class ProblemsApiClient {
 
   formatDetails(responses: Map<string, any>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       result +=
         'Details of problem from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
     result +=
       'Next Steps:\n' +
       '* If the affectedEntities is not empty, suggest to the user that they could investigate those entities further. For example with:\n' +
       "   * list_events tool, using the affected entity's entityId in the entitySelector.\n" +
-      '   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n';
+      '   * query_logs tool, for a narrow time range of the problem, searching for logs about that entity.\n' +
+      '   * Suggest to the user that they view the problem in the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl}/#problems/problemdetails;pid=<problemId>, using the problemId in the URL` : '.');
+
     return result;
   }
 }

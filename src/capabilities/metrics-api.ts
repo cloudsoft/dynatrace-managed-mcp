@@ -116,8 +116,9 @@ export class MetricsApiClient {
     let result = '';
     let totalNumMetrics = 0;
     let anyLimited = false;
-
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numMetrics = data.metrics?.length || 0;
       totalNumMetrics += numMetrics;
@@ -159,6 +160,8 @@ export class MetricsApiClient {
       });
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       '\n' +
       'Next Steps:\n' +
@@ -169,19 +172,22 @@ export class MetricsApiClient {
         ? '* To filter the list of metrics, use list_available_metrics tool with sorting and with specific filters (e.g. entitySelector and searchText).\n'
         : '') +
       '* Use get_metric_details tool for detailed information of a particular metric.\n' +
-      '* Suggest to the user that they use the Dynatrace UI to:\n';
-    //`   * Browse the list of metrics at ${this.authClient.dashboardBaseUrl}/ui/metrics' + '\n` +
-    //`   * View metric data at ${this.authClient.dashboardBaseUrl}/ui/data-explorer' + '\n`;
+      '* Suggest to the user that they use the Dynatrace UI' +
+      (baseUrl
+        ? ` to: \n * Browse the list of metrics at ${baseUrl}/ui/metrics` +
+          `\n * View metric data at ${baseUrl}/ui/data-explorer`
+        : '.');
 
     return result;
   }
 
   formatMetricDetails(responses: Map<string, any>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       result +=
         'Details of metric from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
-      //`${this.authClient.dashboardBaseUrl}/ui/data-explorer`;
     }
 
     result += 'Next Steps:\n* Suggest to the user that they use the Dynatrace UI to view metric data';
@@ -191,7 +197,9 @@ export class MetricsApiClient {
   formatMetricData(responses: Map<string, MetricDataResponse>): string {
     let result = '';
     let allEmpty = true;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let resolution = data.resolution;
       let isNonEmpty = data.result && data.result.length > 0 && data.result[0].data && data.result[0].data.length > 0;
 
@@ -243,13 +251,16 @@ export class MetricsApiClient {
       });
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       '\n' +
       'Next Steps:\n' +
       (allEmpty
         ? '* Verify that the filters were correct, and search again with different filters\n'
         : '* Use query_metrics_data with more specific filters, such as a narrower time range with to and from, and an entitySelector\n') +
-      '* Suggest to the user that they use the Dynatrace UI to view metric data';
+      '* Suggest to the user that they use the Dynatrace UI to view metric data' +
+      (baseUrl ? ` at ${baseUrl}/ui/data-explorer` : '.');
 
     return result;
   }

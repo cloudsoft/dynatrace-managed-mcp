@@ -137,7 +137,9 @@ export class EntitiesApiClient {
     let result = '';
     let totalNumEntities = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numEntities = data.entities?.length || 0;
       totalNumEntities += numEntities;
@@ -193,6 +195,7 @@ export class EntitiesApiClient {
         result += '\n';
       });
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
 
     result +=
       '\n' +
@@ -205,7 +208,8 @@ export class EntitiesApiClient {
       'Use the entityId (UUID) for detailed analysis\n' +
       '* If this has returned the entities that the user wanted, consider using the same entitySelector in subsequent calls such as to list_problems tool if that has not already been done.\n' +
       'Use the entityId (UUID) for detailed analysis\n' +
-      '* Suggest to the user that they view the entities in the Dynatrace UI.' +
+      '* Suggest to the user that they view the entities in the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl}/` : '.') +
       '\n';
 
     return result;
@@ -214,6 +218,7 @@ export class EntitiesApiClient {
   formatEntityTypeList(responses: Map<string, ListEntityTypesResponse>): string {
     let result = '';
     let totalNumTypes = 0;
+    let aliases: string[] = [];
     const commonTypes = [
       'SERVICE',
       'PROCESS_GROUP',
@@ -226,6 +231,7 @@ export class EntitiesApiClient {
     ];
 
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numTypes = data.types?.length || 0;
       totalNumTypes += numTypes;
@@ -262,6 +268,7 @@ export class EntitiesApiClient {
       });
       result += '\n' + conciseList;
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
 
     // Produce a simple strong list of all the types from the json (excluding all details).
     // Also call out some common types (that are available).
@@ -270,7 +277,9 @@ export class EntitiesApiClient {
       'Next Steps:\n' +
       '* To get details of a particular entity type, use the get_entity_type_details tool, passing in the type name\n' +
       '* For subsequent user queries, consider using the entity type in the the entitySelector parameter like "type(HOST)" or "type(SERVICE)".\n' +
-      '* Suggest to the user that they look in the Dynatrace UI \n';
+      '* Suggest to the user that they look in the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl}/` : '.') +
+      '\n';
 
     return result;
   }
@@ -289,20 +298,27 @@ export class EntitiesApiClient {
 
   formatEntityDetails(responses: Map<string, any>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       result += 'Entity details from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
     result +=
       'Next Steps:\n' +
       '* Use list_problems or list_events tools with the same entitySelector to check for relates issues and events.\n' +
-      '* Suggest to the user that they view the entity in the Dynatrace UI using the entityId in the URL' +
-      '\n';
+      '* Suggest to the user that they view the entity in the Dynatrace UI' +
+      (baseUrl
+        ? ` at ${baseUrl}/ui/entity/<entityId>, using the entityId in the URL`
+        : ' using the entityId in the URL');
     return result;
   }
 
   formatEntityRelationships(responses: Map<string, GetEntityRelationshipsResponse>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       const from = data.fromRelationships;
       const to = data.toRelationships;
       const numFrom = this.countRelationships(from);
@@ -324,12 +340,16 @@ export class EntitiesApiClient {
       }
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       'Next Steps:\n' +
       '* Use get_entity_details tool to get more details of this entity, or of entities that it has a relationship to/from.\n' +
       '* Use list_problems or list_events tools with the same entitySelector by entityId to check for related issues and events.\n' +
-      '* Suggest to the user that they view the entity in the Dynatrace UI using the entityId in the URL' +
-      '\n';
+      '* Suggest to the user that they view the entity in the Dynatrace UI' +
+      (baseUrl
+        ? ` at ${baseUrl}/ui/entity/<entityId>, using the entityId in the URL`
+        : ' using the entityId in the URL');
 
     return result;
   }

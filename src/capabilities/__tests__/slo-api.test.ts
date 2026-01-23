@@ -11,6 +11,9 @@ describe('SloApiClient', () => {
   beforeEach(() => {
     mockAuthManager = {
       makeRequests: jest.fn(),
+      getBaseUrl: jest.fn(() => {
+        return 'http://dashboardbaseurl.com/e/environment_id';
+      }),
     } as any;
     client = new SloApiClient(mockAuthManager);
   });

@@ -66,8 +66,10 @@ export class EventsApiClient {
     let result = '';
     let totalNumEvents = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
 
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numEvents = data.events?.length || 0;
       totalNumEvents += numEvents;
@@ -126,6 +128,7 @@ export class EventsApiClient {
         result += '\n';
       });
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
     result +=
       '\n' +
       'Next Steps:\n' +
@@ -138,7 +141,9 @@ export class EventsApiClient {
       (totalNumEvents > 0
         ? '* If the user is interested in a specific event, use the get_event_details tool. Use the event id for this.\n '
         : '') +
-      '* Suggest to the user that they use the Dynatrace UI to view events by navigating to the relevant entity\n' +
+      '* Suggest to the user that they use the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl} ` : ' ') +
+      +'to view events by navigating to the relevant entity\n' +
       '* Use list_problems to see what problems Dynatrace knows of, if not already done so.\n';
 
     return result;
@@ -146,14 +151,17 @@ export class EventsApiClient {
 
   formatDetails(responses: Map<string, any>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       result += 'Event details from environment ' + alias + ' in the following json:\n' + JSON.stringify(data) + '\n';
     }
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
     result +=
       'Next Steps:\n' +
-      '* Suggest to the user that they explore this further in the Dynatrace UI.' +
-      '\n' +
-      '* Use list_problems to see what problems Dynatrace knows of, if not already done so.\n';
+      '* Suggest to the user that they explore this further in the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl} ` : '.') +
+      '\n* Use list_problems to see what problems Dynatrace knows of, if not already done so.\n';
     return result;
   }
 }

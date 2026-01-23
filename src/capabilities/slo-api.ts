@@ -113,7 +113,9 @@ export class SloApiClient {
     let result = '';
     let totalNumSlo = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numSLOs = data.slo?.length || 0;
       totalNumSlo += numSLOs;
@@ -163,6 +165,8 @@ export class SloApiClient {
       });
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       '\n' +
       'Next Steps:\n' +
@@ -172,8 +176,8 @@ export class SloApiClient {
       (anyLimited ? '* Use more restrictive filters, such as a more specific sloSelector and status.\n' : '') +
       (totalNumSlo > 1 ? '* Use sort (e.g. with "+name" for ascending alphabetical order).\n' : '') +
       '* If the user is interested in a specific SLO, use the get_slo_details tool. Use the SLO id for this.\n' +
-      '* Suggest to the user that they view the SLOs in the Dynatrace UI.';
-
+      '* Suggest to the user that they view the SLOs in the Dynatrace UI' +
+      (baseUrl ? ` at ${baseUrl}/ui/slo` : '.');
     return result;
   }
 

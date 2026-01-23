@@ -51,7 +51,9 @@ export class LogsApiClient {
     let result = '';
     let totalNumLogs = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let numLogs = data.results?.length || 0;
       totalNumLogs = totalNumLogs + numLogs;
       let isLimited = data.nextSliceKey != undefined;
@@ -95,6 +97,8 @@ export class LogsApiClient {
       });
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result =
       result +
       '\n' +
@@ -104,8 +108,8 @@ export class LogsApiClient {
         ? '* Use more restrictive filters, such as a narrower time range or more specific search terms\n'
         : '') +
       (totalNumLogs > 1 ? '* Use sort (e.g. with "-timestamp" for newest logs first).\n' : '') +
-      '* Suggest to the user that they use the Dynatrace UI to view metric data at ' +
-      //`${this.authManager.dashboardBaseUrl}/ui/log-monitoring` +
+      '* Suggest to the user that they use the Dynatrace UI to view metric data' +
+      (baseUrl ? ` at ${baseUrl}/ui/log-monitoring.` : '.') +
       '\n' +
       '* Use list_problems to see what problems Dynatrace knows of, if not already done so\n';
 

@@ -11,6 +11,9 @@ describe('ProblemsApiClient', () => {
   beforeEach(() => {
     mockAuthManager = {
       makeRequests: jest.fn(),
+      getBaseUrl: jest.fn(() => {
+        return 'http://dashboardbaseurl.com/e/environment_id';
+      }),
     } as any;
     client = new ProblemsApiClient(mockAuthManager);
   });

@@ -98,7 +98,9 @@ export class SecurityApiClient {
     let result = '';
     let totalNumProblems = 0;
     let anyLimited = false;
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       let totalCount = data.totalCount || -1;
       let numProblems = data.securityProblems?.length || 0;
       totalNumProblems += numProblems;
@@ -143,6 +145,8 @@ export class SecurityApiClient {
       });
     }
 
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       '\n' +
       'Next Steps:\n' +
@@ -154,17 +158,19 @@ export class SecurityApiClient {
         ? '* Use sort (e.g. with "-riskAssessment.riskScore" for highest risk score first).\n'
         : '') +
       '* If the user is interested in a specific vulnerability, use the get_security_problem_details tool. Use the securityProblemId for this.\n' +
-      '* Suggest to the user that they view the security vulnerabilties in the Dynatrace UI.' +
-      //`${this.authClient.dashboardBaseUrl}/ui/security/overview for an overview,` +
-      //`or ${this.authClient.dashboardBaseUrl}/ui/security/vulnerabilities for a list of third-party vulnerabilties` +
-      '\n';
+      '* Suggest to the user that they view the security vulnerabilties in the Dynatrace UI' +
+      (baseUrl
+        ? ` at ${baseUrl}/ui/security/overview for an overview, or ${baseUrl}/ui/security/vulnerabilities for a list of third-party vulnerabilities`
+        : '.');
 
     return result;
   }
 
   formatDetails(responses: Map<string, any>): string {
     let result = '';
+    let aliases: string[] = [];
     for (const [alias, data] of responses) {
+      aliases.push(alias);
       result +=
         'Details of security problem from environment ' +
         alias +
@@ -172,10 +178,17 @@ export class SecurityApiClient {
         JSON.stringify(data) +
         '\n';
     }
+
+    const baseUrl = aliases.length == 1 ? this.authManager.getBaseUrl(aliases[0]) : '';
+
     result +=
       'Next Steps:\n' +
       '* If there are affectedEntities, suggest to the user that they could get further information about those entities with get_entity_detais tool, using the entityId.\n' +
-      '* Suggest to the user that they view the security vulnerability in the Dynatrace UI using the securityProblemId in the URL\n';
+      '* Suggest to the user that they view the security vulnerability in the Dynatrace UI using the securityProblemId in the URL\n' +
+      (baseUrl
+        ? ` at ${baseUrl}/ui/security/vulnerabilities/<securityProblemId>, using the securityProblemId in the URL\n`
+        : '.');
+
     return result;
   }
 }

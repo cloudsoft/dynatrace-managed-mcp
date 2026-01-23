@@ -76,6 +76,15 @@ export class ManagedAuthClientManager {
       }
     }
   }
+
+  getBaseUrl(alias: string): string {
+    for (let client of this.clients) {
+      if (client.alias === alias) {
+        return client.dashboardBaseUrl;
+      }
+    }
+    return '';
+  }
 }
 
 export class ManagedAuthClient {
