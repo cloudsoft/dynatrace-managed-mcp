@@ -126,17 +126,19 @@ Be careful of which MCP to use. If it is unclear, ask the user which they want t
 - **SLO Management**: Service Level Objective monitoring, error budget analysis, and SLO evaluation tracking
 
 **Best Practices:**
-- Use specific time ranges (1-2 hours) rather than large historical queries for better performance
-- Leverage entity selectors to filter data at the source - they are fundamental to getting good results
-- Use problem IDs (UUID format) from list_problems, not display IDs (P-XXXXX)
 - Start with calling the tool get_environments_info. It will include details of connection errors and configuration errors.
 - **CRITICAL: report connection issues to the user before any other requests**.
 - On every request, an "environment_alias" must be passed.
 - If the user wants information of all available environments, "environment_alias" MUST be "ALL_ENVIRONMENTS"
+
+- Use specific time ranges (1-2 hours) rather than large historical queries for better performance
+- Leverage entity selectors to filter data at the source - they are fundamental to getting good results
+- Use problem IDs (UUID format) from list_problems, not display IDs (P-XXXXX)
 - **When users specify counts** (e.g., "first 25 errors", "50 metrics", "100 errors"), always use the "limit" parameter in tools rather than guessing with searchText
 - **Avoid searchText guessing** - only use searchText when user explicitly mentions keywords to search for
 - **discover_entities ALWAYS requires entitySelector** - never call this tool without providing an entitySelector with exactly ONE entity type like type("SERVICE") unless using an EntityId. Multiple entity types are NOT supported.
 - **Next Steps are important** All requests will come back with a footer called 'Next Steps'. Take into consideration what it says.
+
 **Time Range Parameters:**
 - **Relative Times**: now-1h, now-24h, now-7d, now-30d (h=hours, d=days, m=minutes, s=seconds)
 - **ISO Format**: 2024-01-01T10:00:00Z or 2024-01-01T10:00:00
