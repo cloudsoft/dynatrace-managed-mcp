@@ -104,7 +104,7 @@ Specific use cases for the Dynatrace Managed MCP include:
 - **Security insights** - Get detailed vulnerability analysis and security problem tracking. This can include multi-cloud compliance assessment with evidence-based investigation.
 - **Natural language queries** - Queries are mapped to MCP tool usage, and thus API queries, with guidance for next step
 - **Multiphase incident investigation** - Systematic impact assessment and troubleshooting
-- **Multienvironment support** - Query multiple instances of Dynatrace Managed environments from the same MCP server
+- **Multienvironment support** - Query multiple Dynatrace Managed environments from the same MCP server
 
 ## Capabilities
 
@@ -430,7 +430,7 @@ You can edit these as you see fit and include additional context that is specifi
 
 #### Multiple Managed Environments
 
-In this example, you have multiple instances of Dynatrace Managed set up, with different URLs and access tokens. This might be
+In this example, you have multiple Dynatrace Managed environments set up, with different URLs and access tokens. This might be
 a development/test/production setup, or different applications entirely. It is recommended to refer to your environments by the
 same alias you used in the `DT_ENVIRONMENT_CONFIGS` `alias` field to prevent confusion.
 

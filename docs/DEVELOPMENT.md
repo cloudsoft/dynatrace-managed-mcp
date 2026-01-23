@@ -28,11 +28,11 @@ API responses, and the response text returned by the MCP tool. Also check the lo
 
 ### Integration Tests
 
-Integration tests run against a real Dynatrace Managed environment, making real API calls.
+Integration tests run against a real Dynatrace Managed environment with alias set to `testAlias`, making real API calls.
 It is assumed that this environment has sufficient data to be able to sensibly test the API
-calls and processing of responses.
+calls and processing of responses. A second environment with alias `invalidApiToken` needs to be set up, with working credentials but a wrong apiToken, used to check error responses.
 
-Configure the `.env` file with the URL and [an API token with the required scopes](../README.md#api-scopes-for-managed-deployment). See `.env.template` as a starting point.
+Configure both environments in the `.env` file with the URL and [an API token with the required scopes](../README.md#api-scopes-for-managed-deployment). See `.env.template` as a starting point.
 See [main README](../README.md#environment-variables) for description of Environment Variables.
 
 Some useful example testing commands:
