@@ -479,7 +479,7 @@ You can edit these as you see fit and include additional context that is specifi
 
 #### Multiple Managed Environments
 
-In this example, you have multiple Dynatrace Managed environments set up, with different URLs and access tokens. This might be
+In this example, you have multiple Dynatrace Managed environments set up. This might be
 a development/test/production setup, or different applications entirely. It is recommended to refer to your environments by the
 same alias you used in the `DT_ENVIRONMENT_CONFIGS` `alias` field to prevent confusion.
 
@@ -508,19 +508,19 @@ same alias you used in the `DT_ENVIRONMENT_CONFIGS` `alias` field to prevent con
 In this example, you have migrated from Managed to SaaS, but still have historic data in your self-hosted Managed environment.
 You want your AI Assistant to have context on what data lives where. This will enable it to know which environments to target
 for the date range you ask for, e.g. `Show me all Dynatrace problems from the last 7 days` may require data from both environments
-(and thus use both MCP servers), or may all reside in just the SaaS environment.
+(and thus use both MCP servers), or may all reside in just the Dynatrace SaaS.
 
 ```text
 # Dynatrace
 
-- I have two separate Dynatrace environments:
+- I have two separate Dynatraces:
    1. Dynatrace Managed is self-hosted. It contains only historical data from before 29th November 2025.
       It is accessed via the Dynatrace Managed MCP, named dynatrace-managed-mcp-server
    2. Dynatrace SaaS is used for all live data.
       It is accessed through the Dynatrace SaaS MCP, named dynatrace-saas-mcp-server
 - Be careful of which MCP to use.
   If it is unclear, ask which MCP to use.
-- Must make it very clear to the user whether data has come from the Dynatrace Managed or Dynatrace SaaS environments.
+- Must make it very clear to the user whether data has come from the Dynatrace Managed or Dynatrace SaaS.
 ```
 
 #### Hybrid setup running in tandem
@@ -531,7 +531,7 @@ MCP client to have context on where it can find data on each one.
 ```text
 # Dynatrace
 
-- I have two separate Dynatrace environments which both contain live data:
+- I have two separate Dynatraces which both contain live data:
    1. Dynatrace Managed is self-hosted. It only contains observability data for only some of my systems,
       primarily the book store systems.
       It is accessed via the Dynatrace Managed MCP, named dynatrace-managed-mcp-server
@@ -539,7 +539,7 @@ MCP client to have context on where it can find data on each one.
       It is accessed through the Dynatrace SaaS MCP, named dynatrace-saas-mcp-server
 - Be careful of which MCP to use.
   If it is unclear, ask which MCP to use.
-- Must make it very clear to the user whether data has come from the Dynatrace Managed or Dynatrace SaaS environments.
+- Must make it very clear to the user whether data has come from the Dynatrace Managed or Dynatrace SaaS.
 ```
 
 ## Example prompts
@@ -582,7 +582,7 @@ The Dynatrace MCP Server includes sending Telemetry Data via Dynatrace OpenKit t
 - `DT_MCP_TELEMETRY_ENDPOINT_URL` (string, default: Dynatrace endpoint) - OpenKit endpoint URL
 - `DT_MCP_TELEMETRY_DEVICE_ID` (string, default: auto-generated) - Device identifier for tracking
 
-To disable usage tracking, add this to your environment:
+To disable usage tracking, add this to your configuration:
 
 ```bash
 DT_MCP_DISABLE_TELEMETRY=true
