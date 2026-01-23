@@ -67,7 +67,7 @@ export class EntitiesApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async listEntityTypes(environment_aliases?: string): Promise<Map<string, ListEntityTypesResponse>> {
+  async listEntityTypes(environment_aliases: string): Promise<Map<string, ListEntityTypesResponse>> {
     // Deliberately large page size; will format this concisely rather than returning all json in tool response.
     // Want to get all of them (with reason), otherwise trying to pull out common types won't work.
     const params: Record<string, any> = {
@@ -78,20 +78,20 @@ export class EntitiesApiClient {
     return responses;
   }
 
-  async getEntityTypeDetails(entityType: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getEntityTypeDetails(entityType: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/entityTypes/${encodeURIComponent(entityType)}`,
-      undefined,
+      {},
       environment_aliases,
     );
     logger.debug(`getEntityTypeDetails response, entityType=${entityType}`, { data: responses });
     return responses;
   }
 
-  async getEntityDetails(entityId: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getEntityDetails(entityId: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/entities/${encodeURIComponent(entityId)}`,
-      undefined,
+      {},
       environment_aliases,
     );
     logger.debug(`getEntityDetails response, entityId=${entityId}`, { data: responses });
@@ -100,7 +100,7 @@ export class EntitiesApiClient {
 
   async getEntityRelationships(
     entityId: string,
-    environment_aliases?: string,
+    environment_aliases: string,
   ): Promise<Map<string, GetEntityRelationshipsResponse>> {
     const entityDetailsResponse = await this.getEntityDetails(entityId, environment_aliases);
     let cleanResponses = new Map<string, any>();
@@ -117,7 +117,7 @@ export class EntitiesApiClient {
 
   async queryEntities(
     params: EntityQueryParams,
-    environment_aliases?: string,
+    environment_aliases: string,
   ): Promise<Map<string, ListEntitiesResponse>> {
     const queryParams = {
       pageSize: params.pageSize || EntitiesApiClient.API_PAGE_SIZE,

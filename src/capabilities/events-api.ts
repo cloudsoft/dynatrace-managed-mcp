@@ -38,7 +38,7 @@ export class EventsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryEvents(params: EventQueryParams, environment_aliases?: string): Promise<Map<string, ListEventsResponse>> {
+  async queryEvents(params: EventQueryParams, environment_aliases: string): Promise<Map<string, ListEventsResponse>> {
     const queryParams = {
       from: params.from,
       to: params.to,
@@ -52,10 +52,10 @@ export class EventsApiClient {
     return responses;
   }
 
-  async getEventDetails(eventId: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getEventDetails(eventId: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/events/${encodeURIComponent(eventId)}`,
-      undefined,
+      {},
       environment_aliases,
     );
     logger.debug('getEventDetails response: ', { data: responses });

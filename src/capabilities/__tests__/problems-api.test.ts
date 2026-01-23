@@ -78,7 +78,7 @@ describe('ProblemsApiClient', () => {
 
       const result = await client.getProblemDetails('PROBLEM-123', 'testAlias');
 
-      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith('/api/v2/problems/PROBLEM-123', undefined, 'testAlias');
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith('/api/v2/problems/PROBLEM-123', {}, 'testAlias');
       expect(result).toEqual(mockResponse);
     });
   });
@@ -91,7 +91,7 @@ describe('ProblemsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listProblems(undefined, 'testAlias');
+      const response = await client.listProblems({}, 'testAlias');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -110,7 +110,7 @@ describe('ProblemsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listProblems();
+      const response = await client.listProblems({}, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -128,7 +128,7 @@ describe('ProblemsApiClient', () => {
       const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listProblems();
+      const response = await client.listProblems({}, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -188,7 +188,7 @@ describe('ProblemsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.getProblemDetails('845025139905093722_1763133360000V2');
+      const response = await client.getProblemDetails('845025139905093722_1763133360000V2', 'ALL_ENVIRONMENTS');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);
@@ -201,7 +201,7 @@ describe('ProblemsApiClient', () => {
       const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.getProblemDetails('my-id');
+      const response = await client.getProblemDetails('my-id', 'ALL_ENVIRONMENTS');
       const result = client.formatDetails(response);
 
       expect(response).toEqual(mockResponse);

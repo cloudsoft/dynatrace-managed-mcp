@@ -66,7 +66,7 @@ export class MetricsApiClient {
 
   async listAvailableMetrics(
     params: MetricListParams = {},
-    environment_aliases?: string,
+    environment_aliases: string,
   ): Promise<Map<string, ListMetricsResponse>> {
     const queryParams = {
       pageSize: params.pageSize || MetricsApiClient.API_PAGE_SIZE,
@@ -85,20 +85,17 @@ export class MetricsApiClient {
     return responses;
   }
 
-  async getMetricDetails(metricId: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getMetricDetails(metricId: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/metrics/${encodeURIComponent(metricId)}`,
-      undefined,
+      {},
       environment_aliases,
     );
     logger.debug(`getMetricDetails response, metricId=${metricId}`, { data: responses });
     return responses;
   }
 
-  async queryMetrics(
-    params: MetricQueryParams,
-    environment_aliases?: string,
-  ): Promise<Map<string, MetricDataResponse>> {
+  async queryMetrics(params: MetricQueryParams, environment_aliases: string): Promise<Map<string, MetricDataResponse>> {
     const queryParams = {
       metricSelector: params.metricSelector,
       resolution: params.resolution || 'Inf',

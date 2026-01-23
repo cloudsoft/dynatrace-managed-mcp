@@ -75,7 +75,7 @@ export class ProblemsApiClient {
 
   async listProblems(
     params: ProblemQueryParams = {},
-    environment_aliases?: string,
+    environment_aliases: string,
   ): Promise<Map<string, ListProblemResponse>> {
     const queryParams = {
       pageSize: params.pageSize || ProblemsApiClient.API_PAGE_SIZE,
@@ -93,10 +93,10 @@ export class ProblemsApiClient {
     return responses;
   }
 
-  async getProblemDetails(problemId: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getProblemDetails(problemId: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/problems/${encodeURIComponent(problemId)}`,
-      undefined,
+      {},
       environment_aliases,
     );
 

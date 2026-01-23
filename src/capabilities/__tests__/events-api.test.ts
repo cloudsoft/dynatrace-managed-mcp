@@ -83,7 +83,7 @@ describe('EventsApiClient', () => {
 
       const result = await client.getEventDetails('event-123', 'testAlias');
 
-      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith('/api/v2/events/event-123', undefined, 'testAlias');
+      expect(mockAuthManager.makeRequests).toHaveBeenCalledWith('/api/v2/events/event-123', {}, 'testAlias');
       expect(result).toEqual(mockResponse);
     });
   });
@@ -96,7 +96,7 @@ describe('EventsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryEvents({ from: 'now-1h', to: 'now' });
+      const response = await client.queryEvents({ from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);

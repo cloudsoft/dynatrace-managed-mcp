@@ -54,8 +54,8 @@ export class ManagedAuthClientManager {
     }
   }
 
-  async makeRequests(endpoint: string, params?: Record<string, any>, environments?: string): Promise<Map<string, any>> {
-    const selectedAliases = environments ? environments.split(';') : this.validAliases;
+  async makeRequests(endpoint: string, params: Record<string, any>, environments: string): Promise<Map<string, any>> {
+    const selectedAliases = environments === 'ALL_ENVIRONMENTS' ? this.validAliases : environments.split(';');
     let responses = new Map<string, any>();
     for (const client of this.clients) {
       if (selectedAliases.indexOf(client.alias) > -1) {

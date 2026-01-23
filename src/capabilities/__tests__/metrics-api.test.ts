@@ -160,7 +160,7 @@ describe('MetricsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.listAvailableMetrics({});
+      const response = await client.listAvailableMetrics({}, 'ALL_ENVIRONMENTS');
       const result = client.formatMetricList(response);
 
       expect(response).toEqual(mockResponse);

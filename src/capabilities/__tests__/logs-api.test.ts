@@ -87,7 +87,7 @@ describe('LogsApiClient', () => {
       ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
+      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -110,7 +110,7 @@ describe('LogsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
+      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -129,7 +129,7 @@ describe('LogsApiClient', () => {
       ]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
+      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -141,7 +141,7 @@ describe('LogsApiClient', () => {
       const mockResponse = new Map<string, any>([['testAlias', {}]]);
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
+      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);
@@ -160,7 +160,7 @@ describe('LogsApiClient', () => {
 
       mockAuthManager.makeRequests.mockResolvedValue(mockResponse);
 
-      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' });
+      const response = await client.queryLogs({ query: 'content:test', from: 'now-1h', to: 'now' }, 'ALL_ENVIRONMENTS');
       const result = client.formatList(response);
 
       expect(response).toEqual(mockResponse);

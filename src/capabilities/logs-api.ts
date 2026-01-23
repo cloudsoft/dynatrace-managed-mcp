@@ -33,7 +33,7 @@ export class LogsApiClient {
 
   constructor(private authManager: ManagedAuthClientManager) {}
 
-  async queryLogs(params: LogQueryParams, environment_aliases?: string): Promise<Map<string, ListLogsResponse>> {
+  async queryLogs(params: LogQueryParams, environment_aliases: string): Promise<Map<string, ListLogsResponse>> {
     const queryParams = {
       query: params.query || '',
       from: params.from,

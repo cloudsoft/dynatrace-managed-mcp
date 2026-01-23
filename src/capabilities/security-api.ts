@@ -67,7 +67,7 @@ export class SecurityApiClient {
 
   async listSecurityProblems(
     params: SecurityProblemQueryParams = {},
-    environment_aliases?: string,
+    environment_aliases: string,
   ): Promise<Map<string, ListSecurityProblemsResponse>> {
     const queryParams = {
       pageSize: params.pageSize || SecurityApiClient.API_PAGE_SIZE,
@@ -84,10 +84,10 @@ export class SecurityApiClient {
     return responses;
   }
 
-  async getSecurityProblemDetails(problemId: string, environment_aliases?: string): Promise<Map<string, any>> {
+  async getSecurityProblemDetails(problemId: string, environment_aliases: string): Promise<Map<string, any>> {
     const responses = await this.authManager.makeRequests(
       `/api/v2/securityProblems/${encodeURIComponent(problemId)}`,
-      undefined,
+      {},
       environment_aliases,
     );
     logger.debug('getSecurityProblemDetails response', { data: responses });
