@@ -21,10 +21,17 @@
 The local _Dynatrace Managed MCP server_ allows AI Assistants to interact with one or more self-hosted [Dynatrace Managed](https://www.dynatrace.com/) deployments,
 bringing observability data directly into your AI assisted workflow.
 
-This MCP server is specifically designed for Dynatrace Managed (self-hosted) deployments. There is a different
-[Dynatrace MCP](https://github.com/dynatrace-oss/dynatrace-mcp) server for use with Dynatrace SaaS.
+This MCP server supports **two modes**:
 
-> Note: This product is not officially supported by Dynatrace.
+- **Local mode:** Runs on your machine for development and testing.
+- **Remote mode:** Connects over HTTP/SSE for distributed or production-like setups.
+
+> [!TIP]
+> This MCP server is specifically designed for Dynatrace Managed (self-hosted) deployments.
+> For Dynatrace SaaS environments, please use the [Dynatrace MCP](https://github.com/dynatrace-oss/dynatrace-mcp).
+
+> [!WARNING]
+> This product is not officially supported by Dynatrace.
 
 If you need help, please contact us via [GitHub Issues](https://github.com/dynatrace-oss/dynatrace-managed-mcp/issues) if you have feature requests, questions, or need help.
 
@@ -106,7 +113,13 @@ Minimum supported version: Dynatrace Managed 1.328.0
 
 ## Architecture
 
-![Architecture](./assets/dynatrace-managed-mcp-arch.png?raw=true)
+### Local mode
+
+![Architecture (local mode)](./assets/dynatrace-managed-mcp-arch-local.png?raw=true)
+
+### Remote mode
+
+![Architecture (remote mode)](./assets/dynatrace-managed-mcp-arch-remote.png?raw=true)
 
 ## Use cases
 
